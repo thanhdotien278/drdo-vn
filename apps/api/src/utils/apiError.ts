@@ -14,7 +14,19 @@ export class ApiError extends Error {
     return new ApiError(400, 'BAD_REQUEST', message, details);
   }
 
+  static unauthorized(message = 'Yêu cầu đăng nhập'): ApiError {
+    return new ApiError(401, 'UNAUTHORIZED', message);
+  }
+
+  static forbidden(message = 'Không có quyền truy cập'): ApiError {
+    return new ApiError(403, 'FORBIDDEN', message);
+  }
+
   static notFound(message: string): ApiError {
     return new ApiError(404, 'NOT_FOUND', message);
+  }
+
+  static conflict(message: string, details?: unknown): ApiError {
+    return new ApiError(409, 'CONFLICT', message, details);
   }
 }

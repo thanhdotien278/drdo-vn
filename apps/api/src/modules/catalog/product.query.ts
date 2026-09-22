@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../../utils/pagination.js';
+import { paginationQuerySchema } from '../../utils/pagination.js';
 
 export const PRODUCT_SORTS = ['newest', 'price_asc', 'price_desc', 'popular'] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
@@ -14,9 +14,7 @@ const csv = z
   )
   .pipe(z.array(z.string()).max(20));
 
-export const productListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+export const productListQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().max(120).optional(),
   category: csv.optional(),
   brand: csv.optional(),

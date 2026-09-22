@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { fetchFeaturedProducts } from '../api/catalog';
+import { fetchCategories, fetchFeaturedProducts } from '../api/catalog';
 import { ProductGrid } from '../components/ProductCard';
 import { LoadingGrid, StateBlock } from '../components/StateBlock';
 import { useAsync } from '../hooks/useAsync';
-import type { FeaturedProducts } from '../types/catalog';
+import type { Category, FeaturedProducts } from '../types/catalog';
 import { formatRating } from '../utils/format';
 
 function LeafIcon() {
@@ -137,6 +137,7 @@ function Stars({ value }: { value: number }) {
 
 export function HomePage() {
   const featured = useAsync<FeaturedProducts>(async () => (await fetchFeaturedProducts()).data, []);
+  const categories = useAsync<Category[]>(async () => (await fetchCategories()).data, []);
   const location = useLocation();
 
   useEffect(() => {
@@ -147,6 +148,7 @@ export function HomePage() {
   }, [location.hash]);
 
   const heroProducts = (featured.data?.bestSellers ?? []).slice(0, 4);
+  const newArrivals = (featured.data?.newArrivals ?? []).slice(0, 4);
   const topDiscount = Math.max(0, ...(featured.data?.onSale ?? []).map((p) => p.discountPercent));
 
   return (
@@ -161,7 +163,7 @@ export function HomePage() {
               da khỏe mạnh và một hành tinh xanh hơn mỗi ngày.
             </p>
             <div className="hero__cta">
-              <Link className="button button--primary button--lg" to="/san-pham">
+              <Link className="button button--primary button--lg" to="/products">
                 Mua ngay
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -216,7 +218,7 @@ export function HomePage() {
               <p className="eyebrow">Sản phẩm nổi bật</p>
               <h2>Lựa chọn yêu thích từ DRDO</h2>
             </div>
-            <Link className="section-heading__link" to="/san-pham">
+            <Link className="section-heading__link" to="/products">
               Xem tất cả
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -239,6 +241,66 @@ export function HomePage() {
             />
           ) : null}
           {heroProducts.length > 0 ? <ProductGrid products={heroProducts} /> : null}
+        </div>
+      </section>
+
+      <section className="section section--cream" id="categories">
+        <div className="container">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Danh mục sản phẩm</p>
+              <h2>Mua sắm theo nhu cầu của làn da</h2>
+            </div>
+            <Link className="section-heading__link" to="/products">
+              Xem tất cả
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </div>
+          {categories.status === 'loading' ? (
+            <div className="category-grid" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="category-card category-card--skeleton">
+                  <div className="skeleton skeleton--line" />
+                  <div className="skeleton skeleton--line skeleton--short" />
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {categories.status === 'error' ? (
+            <StateBlock
+              title="Không tải được danh mục"
+              description={categories.error?.message}
+              actionLabel="Thử lại"
+              onAction={categories.reload}
+            />
+          ) : null}
+          {categories.status === 'success' && (categories.data?.length ?? 0) === 0 ? (
+            <StateBlock
+              title="Chưa có danh mục nào"
+              description="Danh mục sẽ hiển thị khi được cập nhật vào cửa hàng."
+            />
+          ) : null}
+          {categories.status === 'success' && (categories.data?.length ?? 0) > 0 ? (
+            <div className="category-grid">
+              {(categories.data ?? []).map((category) => (
+                <Link
+                  key={category.id}
+                  className="category-card"
+                  to={`/products?category=${category.slug}`}
+                >
+                  <h3>
+                    {category.name}
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </h3>
+                  {category.description ? <p>{category.description}</p> : null}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -280,7 +342,7 @@ export function HomePage() {
                 Khám phá bộ sản phẩm được yêu thích nhất từ DRDO với thành phần thiên nhiên và hiệu quả vượt
                 trội.
               </p>
-              <Link className="button button--primary" to="/san-pham?sort=popular">
+              <Link className="button button--primary" to="/products?sort=popular">
                 Khám phá ngay
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -313,6 +375,26 @@ export function HomePage() {
           </aside>
         </div>
       </section>
+
+      {newArrivals.length > 0 ? (
+        <section className="section section--sage">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Hàng mới về</p>
+                <h2>Vừa cập bến DRDO</h2>
+              </div>
+              <Link className="section-heading__link" to="/products?sort=newest">
+                Xem tất cả
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            </div>
+            <ProductGrid products={newArrivals} />
+          </div>
+        </section>
+      ) : null}
 
       <section className="section section--cream testimonials">
         <div className="container">

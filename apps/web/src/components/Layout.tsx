@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 
 function LeafMark({ className }: { className?: string }) {
   return (
@@ -36,7 +38,7 @@ function SearchForm() {
     if (keyword.trim()) {
       params.set('q', keyword.trim());
     }
-    navigate({ pathname: '/san-pham', search: params.toString() });
+    navigate({ pathname: '/products', search: params.toString() });
   }
 
   return (
@@ -59,6 +61,71 @@ function SearchForm() {
   );
 }
 
+function CartLink() {
+  const { user, status } = useAuth();
+  const { itemCount } = useCart();
+
+  if (status === 'loading' || !user || !user.roles.includes('customer')) {
+    return null;
+  }
+
+  return (
+    <Link className="site-header__auth-link cart-link" to="/cart">
+      Giỏ hàng
+      {itemCount > 0 ? <span className="cart-link__count">{itemCount}</span> : null}
+    </Link>
+  );
+}
+
+function AuthActions() {
+  const { user, status, logout } = useAuth();
+  const navigate = useNavigate();
+
+  if (status === 'loading') {
+    return null;
+  }
+
+  if (!user) {
+    return (
+      <Link className="site-header__auth-link" to="/login">
+        Đăng nhập
+      </Link>
+    );
+  }
+
+  return (
+    <div className="site-header__user">
+      {user.roles.includes('customer') ? (
+        <>
+          <Link className="site-header__auth-link" to="/orders">
+            Đơn hàng
+          </Link>
+          <Link className="site-header__auth-link" to="/addresses">
+            Địa chỉ
+          </Link>
+        </>
+      ) : null}
+      {user.roles.includes('employee') ? (
+        <Link className="site-header__auth-link" to="/employee/orders">
+          Quản lý đơn
+        </Link>
+      ) : null}
+      <Link className="site-header__auth-link" to="/account" title={user.email}>
+        {user.fullName}
+      </Link>
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => {
+          void logout().then(() => navigate('/'));
+        }}
+      >
+        Đăng xuất
+      </button>
+    </div>
+  );
+}
+
 export function Layout() {
   return (
     <div className="app-shell">
@@ -72,13 +139,15 @@ export function Layout() {
             <NavLink to="/" end>
               Trang chủ
             </NavLink>
-            <NavLink to="/san-pham">Sản phẩm</NavLink>
+            <NavLink to="/products">Sản phẩm</NavLink>
             <Link to="/#ingredients">Thành phần thiên nhiên</Link>
             <Link to="/#commitment">Về DRDO</Link>
           </nav>
           <div className="site-header__actions">
             <SearchForm />
-            <Link className="button button--primary site-header__cta" to="/san-pham">
+            <CartLink />
+            <AuthActions />
+            <Link className="button button--primary site-header__cta" to="/products">
               Mua ngay
             </Link>
           </div>
@@ -104,14 +173,14 @@ export function Layout() {
             <Link to="/">Giới thiệu</Link>
             <Link to="/#commitment">Giá trị cốt lõi</Link>
             <Link to="/#ingredients">Thành phần thiên nhiên</Link>
-            <Link to="/san-pham">Tin tức</Link>
+            <Link to="/products">Tin tức</Link>
           </nav>
           <nav className="site-footer__col" aria-label="Hỗ trợ khách hàng">
             <p className="site-footer__heading">Hỗ trợ khách hàng</p>
-            <Link to="/san-pham">Hướng dẫn mua hàng</Link>
-            <Link to="/san-pham">Chính sách đổi trả</Link>
-            <Link to="/san-pham">Câu hỏi thường gặp</Link>
-            <Link to="/san-pham">Liên hệ</Link>
+            <Link to="/products">Hướng dẫn mua hàng</Link>
+            <Link to="/products">Chính sách đổi trả</Link>
+            <Link to="/products">Câu hỏi thường gặp</Link>
+            <Link to="/products">Liên hệ</Link>
           </nav>
           <div className="site-footer__col">
             <p className="site-footer__heading">Kết nối với chúng tôi</p>

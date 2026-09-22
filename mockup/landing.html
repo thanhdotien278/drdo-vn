@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DRDO — Chăm sóc da thiên nhiên</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest: { DEFAULT: '#2F5D33', dark: '#234D2A', deep: '#17261A' },
+            sage: { DEFAULT: '#718A62', light: '#94A984', 50: '#EDF1E4' },
+            ivory: '#FAF9F4',
+            cream: '#F7F5EE',
+            sand: { DEFAULT: '#ECE8DC', dark: '#DED9C9' },
+            line: '#E3DFD2',
+            muted: '#5E6B58',
+            gold: '#D9A428',
+            sale: '#B4552D',
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-ivory font-sans text-forest-deep antialiased">
+
+  <!-- Announcement bar -->
+  <div class="bg-forest text-ivory">
+    <p class="mx-auto max-w-7xl px-6 py-2.5 text-center text-[12px] font-medium tracking-[0.14em] uppercase">
+      Miễn phí vận chuyển cho đơn từ 499.000₫ &nbsp;•&nbsp; Thành phần thiên nhiên, lành tính
+    </p>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-line bg-ivory/95 backdrop-blur">
+    <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
+      <a href="#" class="flex items-center gap-2.5">
+        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-ivory">
+          <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" aria-hidden="true">
+            <path d="M12 21c6-3.5 8-8.5 7.5-15.5C13 5.5 8 7.5 5.5 12.5c-1.6 3.3-.3 6.7 2.5 8 .9.4 2.7.6 4 .5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M12 21c0-6 2.5-10 7-14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="font-display text-[26px] font-semibold tracking-tight text-forest-deep">DRDO</span>
+      </a>
+      <nav class="hidden items-center gap-9 text-[14.5px] font-medium text-forest-deep lg:flex">
+        <a href="#" class="border-b-2 border-forest pb-1 text-forest">Trang chủ</a>
+        <a href="#products" class="transition hover:text-forest">Sản phẩm</a>
+        <a href="#ingredients" class="transition hover:text-forest">Thành phần</a>
+        <a href="#commitment" class="transition hover:text-forest">Cam kết xanh</a>
+        <a href="#reviews" class="transition hover:text-forest">Đánh giá</a>
+      </nav>
+      <div class="flex items-center gap-5">
+        <button class="hidden text-forest-deep transition hover:text-forest sm:block" aria-label="Tìm kiếm">
+          <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button class="relative text-forest-deep transition hover:text-forest" aria-label="Giỏ hàng">
+          <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M5 8h14l-1.2 12H6.2L5 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span class="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-sale text-[10px] font-semibold text-white">2</span>
+        </button>
+        <a href="#products" class="hidden rounded-full bg-forest px-6 py-2.5 text-[14px] font-semibold text-ivory transition hover:bg-forest-dark sm:block">Mua ngay</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative overflow-hidden bg-ivory">
+    <div class="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full bg-sage-50"></div>
+    <div class="mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-16 lg:grid-cols-2 lg:pt-20">
+      <div class="relative">
+        <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Thiên nhiên cho làn da khỏe đẹp</p>
+        <h1 class="mt-5 font-display text-[clamp(2.6rem,4.6vw,3.6rem)] font-semibold leading-[1.12] text-forest-deep">
+          Chăm sóc da dịu lành<br />
+          <span class="italic text-forest">từ thiên nhiên</span> thuần khiết
+        </h1>
+        <p class="mt-6 max-w-lg text-[16.5px] leading-relaxed text-muted">
+          DRDO mang đến giải pháp chăm sóc da an toàn, lành tính và thân thiện với môi trường —
+          vì một làn da khỏe mạnh và một hành tinh xanh hơn mỗi ngày.
+        </p>
+        <div class="mt-9 flex flex-wrap items-center gap-4">
+          <a href="#products" class="inline-flex items-center gap-2.5 rounded-full bg-forest px-8 py-4 text-[15px] font-semibold text-ivory shadow-sm transition hover:-translate-y-0.5 hover:bg-forest-dark">
+            Mua ngay
+            <svg viewBox="0 0 24 24" fill="none" class="h-4.5 w-4.5 h-[18px] w-[18px]"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#ingredients" class="inline-flex items-center gap-2.5 rounded-full border border-forest px-8 py-4 text-[15px] font-semibold text-forest transition hover:bg-sage-50">
+            Khám phá thành phần
+          </a>
+        </div>
+        <ul class="mt-12 flex flex-wrap gap-x-10 gap-y-5">
+          <li class="flex items-center gap-3">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 21c6-3.5 8-8.5 7.5-15.5C13 5.5 8 7.5 5.5 12.5c-1.6 3.3-.3 6.7 2.5 8 .9.4 2.7.6 4 .5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c0-6 2.5-10 7-14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </span>
+            <span class="text-[13.5px] font-medium leading-snug">Thành phần<br />tự nhiên</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 5 5.8v5.3c0 4.6 3 7.8 7 9.4 4-1.6 7-4.8 7-9.4V5.8L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="m9.3 11.8 2 2 3.6-3.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </span>
+            <span class="text-[13.5px] font-medium leading-snug">An toàn<br />cho mọi loại da</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h17M12 3.5c-5.5 5.5-5.5 11.5 0 17 5.5-5.5 5.5-11.5 0-17Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="text-[13.5px] font-medium leading-snug">Thân thiện<br />với môi trường</span>
+          </li>
+        </ul>
+      </div>
+      <div class="relative mx-auto w-full max-w-[520px]">
+        <div class="absolute -left-8 top-10 h-40 w-40 rounded-full bg-sage-50"></div>
+        <div class="absolute -bottom-6 -right-6 h-28 w-28 rounded-full bg-sand"></div>
+        <img
+          src="/apps/web/public/images/hero.webp"
+          alt="Bộ sản phẩm chăm sóc da DRDO đặt trên đá tự nhiên cùng lá xanh"
+          class="relative aspect-[4/5] w-full rounded-b-[28px] rounded-t-[999px] border border-line object-cover shadow-md"
+        />
+        <div class="absolute -left-6 bottom-16 flex items-center gap-3 rounded-2xl border border-line bg-white/95 px-5 py-4 shadow-md backdrop-blur">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-sage-50 text-forest">
+            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 5 5.8v5.3c0 4.6 3 7.8 7 9.4 4-1.6 7-4.8 7-9.4V5.8L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="m9.3 11.8 2 2 3.6-3.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+          <div>
+            <p class="text-[14px] font-semibold">100% lành tính</p>
+            <p class="text-[12px] text-muted">Kiểm nghiệm da liễu</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured products -->
+  <section id="products" class="bg-cream py-24">
+    <div class="mx-auto max-w-7xl px-6">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Sản phẩm nổi bật</p>
+          <h2 class="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-forest-deep">Lựa chọn yêu thích từ DRDO</h2>
+        </div>
+        <a href="#" class="inline-flex items-center gap-2 text-[14.5px] font-semibold text-forest transition hover:text-forest-dark">
+          Xem tất cả
+          <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+      <div class="mt-12 grid grid-cols-2 gap-6 lg:grid-cols-4">
+        <!-- Card 1 -->
+        <article class="group overflow-hidden rounded-[14px] border border-line bg-white transition hover:-translate-y-1 hover:shadow-md">
+          <div class="relative">
+            <img src="/apps/api/uploads/products/toner-cocoon-rau-ma-1.svg" alt="Toner Cocoon Rau Má" class="aspect-[4/5] w-full object-cover" />
+            <span class="absolute left-3 top-3 rounded-full bg-forest px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ivory">Bán chạy</span>
+          </div>
+          <div class="p-5">
+            <p class="text-[12px] font-medium uppercase tracking-wide text-muted">Cocoon</p>
+            <h3 class="mt-1.5 text-[15px] font-semibold leading-snug">Toner Rau Má Dịu Lành</h3>
+            <p class="mt-2 text-[13px] text-gold">★★★★★ <span class="text-muted">4.9</span></p>
+            <div class="mt-3 flex items-center justify-between">
+              <p class="text-[16px] font-bold text-forest">245.000₫</p>
+              <button class="flex h-9 w-9 items-center justify-center rounded-full border border-line text-forest transition group-hover:bg-forest group-hover:text-ivory" aria-label="Thêm vào giỏ">
+                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+        <!-- Card 2 -->
+        <article class="group overflow-hidden rounded-[14px] border border-line bg-white transition hover:-translate-y-1 hover:shadow-md">
+          <div class="relative">
+            <img src="/apps/api/uploads/products/serum-cocoon-bi-dao-giam-mun-1.svg" alt="Serum Cocoon Bí Đao Giảm Mụn" class="aspect-[4/5] w-full object-cover" />
+            <span class="absolute left-3 top-3 rounded-full bg-sale px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">-18%</span>
+          </div>
+          <div class="p-5">
+            <p class="text-[12px] font-medium uppercase tracking-wide text-muted">Cocoon</p>
+            <h3 class="mt-1.5 text-[15px] font-semibold leading-snug">Serum Bí Đao Giảm Mụn</h3>
+            <p class="mt-2 text-[13px] text-gold">★★★★★ <span class="text-muted">4.8</span></p>
+            <div class="mt-3 flex items-center justify-between">
+              <p class="text-[16px] font-bold text-forest">320.000₫ <span class="ml-1 text-[13px] font-normal text-muted line-through">389.000₫</span></p>
+              <button class="flex h-9 w-9 items-center justify-center rounded-full border border-line text-forest transition group-hover:bg-forest group-hover:text-ivory" aria-label="Thêm vào giỏ">
+                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+        <!-- Card 3 -->
+        <article class="group overflow-hidden rounded-[14px] border border-line bg-white transition hover:-translate-y-1 hover:shadow-md">
+          <div class="relative">
+            <img src="/apps/api/uploads/products/kem-duong-am-cerave-moisturising-cream-1.svg" alt="Kem Dưỡng Ẩm CeraVe" class="aspect-[4/5] w-full object-cover" />
+          </div>
+          <div class="p-5">
+            <p class="text-[12px] font-medium uppercase tracking-wide text-muted">CeraVe</p>
+            <h3 class="mt-1.5 text-[15px] font-semibold leading-snug">Kem Dưỡng Ẩm Phục Hồi</h3>
+            <p class="mt-2 text-[13px] text-gold">★★★★★ <span class="text-muted">4.7</span></p>
+            <div class="mt-3 flex items-center justify-between">
+              <p class="text-[16px] font-bold text-forest">410.000₫</p>
+              <button class="flex h-9 w-9 items-center justify-center rounded-full border border-line text-forest transition group-hover:bg-forest group-hover:text-ivory" aria-label="Thêm vào giỏ">
+                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+        <!-- Card 4 -->
+        <article class="group overflow-hidden rounded-[14px] border border-line bg-white transition hover:-translate-y-1 hover:shadow-md">
+          <div class="relative">
+            <img src="/apps/api/uploads/products/sua-rua-mat-la-roche-posay-effaclar-gel-1.svg" alt="Sữa Rửa Mặt La Roche-Posay Effaclar" class="aspect-[4/5] w-full object-cover" />
+            <span class="absolute left-3 top-3 rounded-full bg-sage px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">Mới</span>
+          </div>
+          <div class="p-5">
+            <p class="text-[12px] font-medium uppercase tracking-wide text-muted">La Roche-Posay</p>
+            <h3 class="mt-1.5 text-[15px] font-semibold leading-snug">Sữa Rửa Mặt Effaclar Gel</h3>
+            <p class="mt-2 text-[13px] text-gold">★★★★★ <span class="text-muted">4.8</span></p>
+            <div class="mt-3 flex items-center justify-between">
+              <p class="text-[16px] font-bold text-forest">365.000₫</p>
+              <button class="flex h-9 w-9 items-center justify-center rounded-full border border-line text-forest transition group-hover:bg-forest group-hover:text-ivory" aria-label="Thêm vào giỏ">
+                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ingredients -->
+  <section id="ingredients" class="bg-sage-50 py-24">
+    <div class="mx-auto max-w-7xl px-6">
+      <div class="max-w-xl">
+        <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Tinh hoa thiên nhiên</p>
+        <h2 class="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold leading-snug text-forest-deep">
+          Thành phần lành tính,<br />tốt cho làn da và hành tinh
+        </h2>
+      </div>
+      <ul class="mt-14 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
+        <li class="text-center">
+          <span class="mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-t-[999px] rounded-b-[20px] border border-line">
+            <img src="/apps/web/public/images/ingredient-tea.webp" alt="Trà xanh" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+          </span>
+          <h3 class="mt-5 font-display text-[19px] font-semibold">Trà xanh</h3>
+          <p class="mx-auto mt-2 max-w-[240px] text-[14px] leading-relaxed text-muted">Giàu chất chống oxy hóa, làm dịu và bảo vệ da.</p>
+        </li>
+        <li class="text-center">
+          <span class="mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-t-[999px] rounded-b-[20px] border border-line">
+            <img src="/apps/web/public/images/ingredient-aloe.webp" alt="Lô hội" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+          </span>
+          <h3 class="mt-5 font-display text-[19px] font-semibold">Lô hội</h3>
+          <p class="mx-auto mt-2 max-w-[240px] text-[14px] leading-relaxed text-muted">Cấp ẩm sâu, làm mát và phục hồi da.</p>
+        </li>
+        <li class="text-center">
+          <span class="mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-t-[999px] rounded-b-[20px] border border-line">
+            <img src="/apps/web/public/images/ingredient-centella.webp" alt="Rau má" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+          </span>
+          <h3 class="mt-5 font-display text-[19px] font-semibold">Rau má</h3>
+          <p class="mx-auto mt-2 max-w-[240px] text-[14px] leading-relaxed text-muted">Làm dịu kích ứng, tăng cường tái tạo da.</p>
+        </li>
+        <li class="text-center">
+          <span class="mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-t-[999px] rounded-b-[20px] border border-line">
+            <img src="/apps/web/public/images/ingredient-oil.webp" alt="Tinh dầu thiên nhiên" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+          </span>
+          <h3 class="mt-5 font-display text-[19px] font-semibold">Tinh dầu thiên nhiên</h3>
+          <p class="mx-auto mt-2 max-w-[240px] text-[14px] leading-relaxed text-muted">Nuôi dưỡng da, mang lại cảm giác thư giãn tự nhiên.</p>
+        </li>
+      </ul>
+      <blockquote class="mx-auto mt-16 flex max-w-2xl flex-col items-center gap-4 text-center">
+        <svg viewBox="0 0 24 24" fill="none" class="h-8 w-8 text-sage"><path d="M12 21c6-3.5 8-8.5 7.5-15.5C13 5.5 8 7.5 5.5 12.5c-1.6 3.3-.3 6.7 2.5 8 .9.4 2.7.6 4 .5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c0-6 2.5-10 7-14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <p class="font-display text-[clamp(1.3rem,2.2vw,1.7rem)] font-medium italic leading-snug text-forest-deep">
+          “Làn da khỏe đẹp bắt đầu từ những điều tự nhiên nhất”
+        </p>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Promo -->
+  <section class="bg-ivory py-24">
+    <div class="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1fr_360px]">
+      <div class="grid overflow-hidden rounded-[20px] border border-line bg-cream md:grid-cols-2">
+        <div class="flex flex-col justify-center p-10 lg:p-14">
+          <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Bộ sưu tập bán chạy</p>
+          <h2 class="mt-4 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold leading-snug text-forest-deep">
+            Dịu lành hôm nay,<br />làn da tươi sáng ngày mai
+          </h2>
+          <p class="mt-5 text-[15.5px] leading-relaxed text-muted">
+            Khám phá bộ sản phẩm được yêu thích nhất từ DRDO với thành phần thiên nhiên và hiệu quả vượt trội.
+          </p>
+          <a href="#" class="mt-8 inline-flex w-fit items-center gap-2.5 rounded-full bg-forest px-7 py-3.5 text-[14.5px] font-semibold text-ivory transition hover:-translate-y-0.5 hover:bg-forest-dark">
+            Khám phá ngay
+            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="relative">
+          <img src="/apps/web/public/images/promo.webp" alt="Bộ sản phẩm DRDO bán chạy" class="h-full min-h-[320px] w-full object-cover" />
+          <span class="absolute right-6 top-6 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-forest text-center text-ivory shadow-md">
+            <span class="text-[10px] uppercase tracking-wider">Ưu đãi</span>
+            <span class="font-display text-[22px] font-bold leading-none">-25%</span>
+            <span class="text-[10px]">set đầy đủ</span>
+          </span>
+        </div>
+      </div>
+      <aside class="relative overflow-hidden rounded-[20px] border border-line">
+        <img src="/apps/web/public/images/nature-panel.webp" alt="Lá xanh với giọt sương" class="h-full min-h-[320px] w-full object-cover" />
+        <div class="absolute inset-0 flex items-end bg-forest-deep/30 p-8">
+          <blockquote>
+            <p class="font-display text-[20px] font-medium italic leading-snug text-white">“Vẻ đẹp thật sự là sự hài hòa giữa con người và thiên nhiên.”</p>
+            <cite class="mt-3 block text-[13px] font-medium not-italic tracking-wide text-sage-50">— DRDO</cite>
+          </blockquote>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="reviews" class="bg-cream py-24">
+    <div class="mx-auto max-w-7xl px-6">
+      <div>
+        <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Khách hàng nói gì về DRDO?</p>
+        <h2 class="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-forest-deep">Những làn da hạnh phúc</h2>
+      </div>
+      <ul class="mt-12 grid gap-6 md:grid-cols-3">
+        <li class="flex flex-col justify-between rounded-[14px] border border-line bg-white p-8">
+          <p class="text-[15px] leading-relaxed text-forest-deep">“Da mình nhạy cảm nhưng dùng DRDO thấy rất dịu nhẹ, không kích ứng. Cảm giác da khỏe và sáng hơn sau vài tuần!”</p>
+          <div class="mt-8 flex items-center gap-4">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-sage-50 text-[13px] font-semibold text-forest">My</span>
+            <div>
+              <p class="text-[14.5px] font-semibold">Nguyễn Thảo My</p>
+              <p class="mt-0.5 text-[13px] text-gold">★★★★★ <span class="text-muted">5.0</span></p>
+            </div>
+          </div>
+        </li>
+        <li class="flex flex-col justify-between rounded-[14px] border border-line bg-white p-8">
+          <p class="text-[15px] leading-relaxed text-forest-deep">“Mình rất thích bảng thành phần tự nhiên và bao bì thân thiện môi trường. Vừa chăm sóc da vừa góp phần bảo vệ hành tinh, thật ý nghĩa!”</p>
+          <div class="mt-8 flex items-center gap-4">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-sage-50 text-[13px] font-semibold text-forest">Linh</span>
+            <div>
+              <p class="text-[14.5px] font-semibold">Trần Phương Linh</p>
+              <p class="mt-0.5 text-[13px] text-gold">★★★★★ <span class="text-muted">4.9</span></p>
+            </div>
+          </div>
+        </li>
+        <li class="flex flex-col justify-between rounded-[14px] border border-line bg-white p-8">
+          <p class="text-[15px] leading-relaxed text-forest-deep">“Sản phẩm có mùi hương thiên nhiên dễ chịu, kết cấu mỏng nhẹ, thấm nhanh. DRDO thực sự là lựa chọn đáng tin cậy!”</p>
+          <div class="mt-8 flex items-center gap-4">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-sage-50 text-[13px] font-semibold text-forest">Anh</span>
+            <div>
+              <p class="text-[14.5px] font-semibold">Lê Minh Anh</p>
+              <p class="mt-0.5 text-[13px] text-gold">★★★★★ <span class="text-muted">4.8</span></p>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Commitment -->
+  <section id="commitment" class="bg-ivory py-24">
+    <div class="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-[280px_1fr_280px]">
+      <div class="relative hidden lg:block">
+        <img src="/apps/web/public/images/commitment-left.webp" alt="Đôi tay nâng một mầm cây xanh" class="aspect-[3/4] w-full rounded-[20px] border border-line object-cover" />
+        <p class="absolute bottom-5 left-5 font-display text-[17px] font-medium italic leading-snug text-white drop-shadow">Vì một<br />hành tinh xanh hơn</p>
+      </div>
+      <div class="text-center lg:px-8">
+        <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage">Cam kết từ DRDO</p>
+        <h2 class="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold leading-snug text-forest-deep">
+          Làm đẹp bền vững<br />cho thế hệ mai sau
+        </h2>
+        <p class="mx-auto mt-5 max-w-xl text-[15.5px] leading-relaxed text-muted">
+          Chúng tôi tin rằng vẻ đẹp thật sự đến từ sự hài hòa với thiên nhiên. DRDO cam kết sử dụng bao bì
+          thân thiện môi trường, thành phần an toàn và quy trình sản xuất bền vững.
+        </p>
+        <ul class="mx-auto mt-10 grid max-w-xl grid-cols-2 gap-x-8 gap-y-7 text-left">
+          <li class="flex items-start gap-3.5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="m8.5 5.5 2-3 2 3M7 9l-3 5h4m8.5-8.5 3 5h-4m-2 5.5-2 3-2-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <p class="text-[14px] leading-snug"><strong class="font-semibold">Bao bì tái chế</strong><br /><span class="text-muted">Giảm thiểu rác thải nhựa</span></p>
+          </li>
+          <li class="flex items-start gap-3.5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 21c6-3.5 8-8.5 7.5-15.5C13 5.5 8 7.5 5.5 12.5c-1.6 3.3-.3 6.7 2.5 8 .9.4 2.7.6 4 .5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c0-6 2.5-10 7-14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </span>
+            <p class="text-[14px] leading-snug"><strong class="font-semibold">Không thử nghiệm</strong><br /><span class="text-muted">trên động vật</span></p>
+          </li>
+          <li class="flex items-start gap-3.5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 12h17M12 3.5c-5.5 5.5-5.5 11.5 0 17 5.5-5.5 5.5-11.5 0-17Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            </span>
+            <p class="text-[14px] leading-snug"><strong class="font-semibold">Thành phần tự nhiên</strong><br /><span class="text-muted">có nguồn gốc rõ ràng</span></p>
+          </li>
+          <li class="flex items-start gap-3.5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-white text-sage">
+              <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 20s-7-4.3-8.5-9C2.6 8 4.6 5 7.7 5c1.8 0 3.3 1 4.3 2.3C13 6 14.5 5 16.3 5c3.1 0 5.1 3 4.2 6-1.5 4.7-8.5 9-8.5 9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            </span>
+            <p class="text-[14px] leading-snug"><strong class="font-semibold">Vì cộng đồng</strong><br /><span class="text-muted">và môi trường xanh hơn</span></p>
+          </li>
+        </ul>
+      </div>
+      <div class="relative hidden lg:block">
+        <img src="/apps/web/public/images/commitment-right.webp" alt="Rừng xanh trong sương sớm" class="aspect-[3/4] w-full rounded-[20px] border border-line object-cover" />
+        <p class="absolute bottom-5 left-5 font-display text-[17px] font-medium italic leading-snug text-white drop-shadow">Cùng nhau<br />vì những điều tốt đẹp hơn</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="bg-forest py-20">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-6">
+      <div class="max-w-lg">
+        <p class="text-[12px] font-semibold uppercase tracking-[0.18em] text-sage-50/80">Ưu đãi độc quyền</p>
+        <h2 class="mt-3 font-display text-[clamp(1.6rem,2.6vw,2.1rem)] font-semibold text-ivory">
+          Nhận giảm 10% cho đơn hàng đầu tiên
+        </h2>
+        <p class="mt-3 text-[14.5px] leading-relaxed text-sage-50/80">
+          Đăng ký để nhận bí quyết chăm da thiên nhiên và ưu đãi mới nhất từ DRDO.
+        </p>
+      </div>
+      <form class="flex w-full max-w-md gap-3" onsubmit="return false">
+        <input
+          type="email"
+          placeholder="Email của bạn"
+          class="h-[52px] flex-1 rounded-full border border-ivory/30 bg-ivory/10 px-6 text-[14.5px] text-ivory placeholder:text-ivory/60 focus:border-ivory/60 focus:outline-none"
+        />
+        <button type="submit" class="h-[52px] shrink-0 rounded-full bg-ivory px-7 text-[14.5px] font-semibold text-forest transition hover:bg-sand">Đăng ký</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-forest-deep text-ivory">
+    <div class="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div>
+        <a href="#" class="flex items-center gap-2.5">
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-ivory">
+            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 21c6-3.5 8-8.5 7.5-15.5C13 5.5 8 7.5 5.5 12.5c-1.6 3.3-.3 6.7 2.5 8 .9.4 2.7.6 4 .5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c0-6 2.5-10 7-14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+          <span class="font-display text-[24px] font-semibold">DRDO</span>
+        </a>
+        <p class="mt-5 max-w-xs text-[14px] leading-relaxed text-ivory/70">
+          Chăm sóc da thiên nhiên, lành tính và bền vững — vì làn da khỏe đẹp và hành tinh xanh.
+        </p>
+      </div>
+      <div>
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-sage-light">Cửa hàng</h3>
+        <ul class="mt-5 space-y-3 text-[14px] text-ivory/80">
+          <li><a href="#" class="transition hover:text-ivory">Tất cả sản phẩm</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Bán chạy nhất</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Hàng mới về</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Ưu đãi</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-sage-light">Hỗ trợ</h3>
+        <ul class="mt-5 space-y-3 text-[14px] text-ivory/80">
+          <li><a href="#" class="transition hover:text-ivory">Chính sách giao hàng</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Đổi trả & hoàn tiền</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Câu hỏi thường gặp</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Liên hệ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-sage-light">Kết nối</h3>
+        <ul class="mt-5 space-y-3 text-[14px] text-ivory/80">
+          <li><a href="#" class="transition hover:text-ivory">Instagram</a></li>
+          <li><a href="#" class="transition hover:text-ivory">Facebook</a></li>
+          <li><a href="#" class="transition hover:text-ivory">TikTok</a></li>
+          <li><a href="#" class="transition hover:text-ivory">hello@drdo.vn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-ivory/10">
+      <p class="mx-auto max-w-7xl px-6 py-6 text-[13px] text-ivory/60">© 2026 DRDO.vn — Làm đẹp cùng thiên nhiên.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

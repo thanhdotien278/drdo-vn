@@ -3,7 +3,7 @@ import { BrandModel } from '../../models/Brand.js';
 import { CategoryModel } from '../../models/Category.js';
 import { ProductModel, type Product } from '../../models/Product.js';
 import { ApiError } from '../../utils/apiError.js';
-import { buildPageMeta, type PageMeta } from '../../utils/pagination.js';
+import { buildPageMeta, skipForPage, type PageMeta } from '../../utils/pagination.js';
 import { slugify } from '../../utils/slug.js';
 import {
   toBrandDto,
@@ -97,7 +97,7 @@ export async function listProducts(
   }
 
   const filter = await buildProductFilter(query);
-  const skip = (query.page - 1) * query.limit;
+  const skip = skipForPage(query.page, query.limit);
 
   const [products, total] = await Promise.all([
     ProductModel.find(filter)

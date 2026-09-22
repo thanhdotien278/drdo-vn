@@ -11,6 +11,7 @@
     "dev:web": "npm run dev -w @drdo/web",
     "build": "npm run build -w @drdo/api && npm run build -w @drdo/web",
     "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "seed": "npm run seed -w @drdo/api"
   },

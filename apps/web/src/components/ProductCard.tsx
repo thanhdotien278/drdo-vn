@@ -8,7 +8,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
 
   return (
     <article className="product-card">
-      <Link className="product-card__link" to={`/san-pham/${product.slug}`}>
+      <Link className="product-card__link" to={`/products/${product.slug}`}>
         <div className="product-card__media">
           {image ? (
             <img src={image.url} alt={image.alt || product.name} loading="lazy" />

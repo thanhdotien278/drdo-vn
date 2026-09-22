@@ -1,5 +1,6 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
-import { ApiError } from '../../utils/apiError.js';
+import { Router } from 'express';
+import { asyncHandler } from '../../utils/asyncHandler.js';
+import { parseInput } from '../../utils/validate.js';
 import {
   getProductBySlug,
   listBrands,
@@ -9,14 +10,6 @@ import {
   listRelatedProducts,
 } from './catalog.service.js';
 import { productListQuerySchema } from './product.query.js';
-
-function asyncHandler(
-  handler: (req: Request, res: Response) => Promise<void>,
-): (req: Request, res: Response, next: NextFunction) => void {
-  return (req, res, next) => {
-    handler(req, res).catch(next);
-  };
-}
 
 export const catalogRouter = Router();
 
@@ -37,12 +30,8 @@ catalogRouter.get(
 catalogRouter.get(
   '/products',
   asyncHandler(async (req, res) => {
-    const parsed = productListQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      throw ApiError.badRequest('Tham số truy vấn không hợp lệ', parsed.error.flatten().fieldErrors);
-    }
-
-    const { items, meta } = await listProducts(parsed.data);
+    const query = parseInput(productListQuerySchema, req.query, 'Tham số truy vấn không hợp lệ');
+    const { items, meta } = await listProducts(query);
     res.json({ data: items, meta });
   }),
 );

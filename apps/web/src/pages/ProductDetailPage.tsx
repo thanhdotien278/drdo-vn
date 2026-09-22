@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchProductBySlug, fetchRelatedProducts } from '../api/catalog';
+import { addCartItem } from '../api/cart';
 import { ApiRequestError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 import { ProductGrid } from '../components/ProductCard';
 import { StateBlock } from '../components/StateBlock';
 import { useAsync } from '../hooks/useAsync';
@@ -19,7 +22,13 @@ function DetailBlock({ title, children }: { title: string; children: React.React
 
 export function ProductDetailPage() {
   const { slug = '' } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { setCart } = useCart();
   const [activeImage, setActiveImage] = useState(0);
+  const [qty, setQty] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [cartMessage, setCartMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   const product = useAsync<ProductDetail>(async () => (await fetchProductBySlug(slug)).data, [slug]);
   const related = useAsync<ProductListItem[]>(async () => (await fetchRelatedProducts(slug)).data, [slug]);
@@ -56,11 +65,11 @@ export function ProductDetailPage() {
       <nav className="breadcrumb" aria-label="Đường dẫn">
         <Link to="/">Trang chủ</Link>
         <span aria-hidden="true">/</span>
-        <Link to="/san-pham">Sản phẩm</Link>
+        <Link to="/products">Sản phẩm</Link>
         {data.category ? (
           <>
             <span aria-hidden="true">/</span>
-            <Link to={`/san-pham?category=${data.category.slug}`}>{data.category.name}</Link>
+            <Link to={`/products?category=${data.category.slug}`}>{data.category.name}</Link>
           </>
         ) : null}
       </nav>
@@ -126,10 +135,75 @@ export function ProductDetailPage() {
             </ul>
           ) : null}
 
-          <button type="button" className="button button--primary button--lg" disabled>
-            {data.inStock ? 'Thêm vào giỏ (sắp ra mắt)' : 'Hết hàng'}
-          </button>
-          <p className="muted">Giỏ hàng và thanh toán sẽ được mở trong giai đoạn tiếp theo.</p>
+          <div className="product-summary__buy">
+            <div className="qty-stepper" aria-label="Số lượng">
+              <button
+                type="button"
+                disabled={qty <= 1}
+                onClick={() => setQty((value) => Math.max(1, value - 1))}
+                aria-label="Giảm số lượng"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, data.availableStock)}
+                value={qty}
+                onChange={(event) => {
+                  const next = Math.floor(Number(event.target.value));
+                  if (Number.isFinite(next) && next >= 1) {
+                    setQty(next);
+                  }
+                }}
+                aria-label="Số lượng sản phẩm"
+              />
+              <button
+                type="button"
+                disabled={qty >= data.availableStock}
+                onClick={() => setQty((value) => value + 1)}
+                aria-label="Tăng số lượng"
+              >
+                +
+              </button>
+            </div>
+            <button
+              type="button"
+              className="button button--primary button--lg"
+              disabled={!data.inStock || adding}
+              onClick={() => {
+                if (!user) {
+                  navigate(`/login?from=${encodeURIComponent(`/products/${data.slug}`)}`);
+                  return;
+                }
+                setCartMessage(null);
+                setAdding(true);
+                addCartItem(data.id, qty)
+                  .then(({ data: cart }) => {
+                    setCart(cart);
+                    setCartMessage({ kind: 'ok', text: 'Đã thêm vào giỏ hàng.' });
+                  })
+                  .catch((err: unknown) => {
+                    setCartMessage({
+                      kind: 'error',
+                      text:
+                        err instanceof ApiRequestError
+                          ? err.message
+                          : 'Không thêm được vào giỏ hàng.',
+                    });
+                  })
+                  .finally(() => setAdding(false));
+              }}
+            >
+              {!data.inStock ? 'Hết hàng' : adding ? 'Đang thêm…' : 'Thêm vào giỏ hàng'}
+            </button>
+          </div>
+          {cartMessage ? (
+            <p className={cartMessage.kind === 'error' ? 'error-text' : 'muted'} role="status">
+              {cartMessage.text}{' '}
+              {cartMessage.kind === 'ok' ? <Link to="/cart">Xem giỏ hàng →</Link> : null}
+            </p>
+          ) : null}
         </div>
       </div>
 
