@@ -41,6 +41,7 @@ export function ProductListPage() {
 
   const [minPriceInput, setMinPriceInput] = useState(minPrice);
   const [maxPriceInput, setMaxPriceInput] = useState(maxPrice);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const categories = useAsync<Category[]>(async () => (await fetchCategories()).data, []);
   const brands = useAsync<Brand[]>(async () => (await fetchBrands()).data, []);
@@ -94,7 +95,20 @@ export function ProductListPage() {
     availability !== 'all';
 
   return (
-    <div className="catalog-layout">
+    <div className={filtersOpen ? 'catalog-layout catalog-layout--filters-open' : 'catalog-layout'}>
+      <div className="catalog-toolbar">
+        <button
+          type="button"
+          className="button button--outline filters-toggle"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="16" height="16">
+            <path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          Bộ lọc
+        </button>
+      </div>
       <aside className="filters" aria-label="Bộ lọc sản phẩm">
         <div className="filters__header">
           <h2>Bộ lọc</h2>
