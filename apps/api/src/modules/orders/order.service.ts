@@ -31,6 +31,8 @@ import { computeOrderTotals, type OrderTotals } from './orderTotals.js';
  */
 export const SHIPPING_FEE_VND = 30_000;
 
+const MAX_ORDER_NO_ATTEMPTS = 5;
+
 const shippingFieldsSchema = z.object({
   fullName: z.string().trim().min(2, 'Vui lòng nhập họ tên người nhận').max(120),
   phone: z.string().trim().min(8, 'Số điện thoại không hợp lệ').max(20),
@@ -209,7 +211,7 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
 
   let order: OrderDocument | null = null;
   try {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < MAX_ORDER_NO_ATTEMPTS; attempt += 1) {
       try {
         order = await OrderModel.create({
           orderNo: generateOrderNo(),
@@ -235,7 +237,7 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
         break;
       } catch (error) {
         const duplicate = (error as { code?: number }).code === 11000;
-        if (!duplicate || attempt === 4) throw error;
+        if (!duplicate || attempt === MAX_ORDER_NO_ATTEMPTS - 1) throw error;
       }
     }
 
