@@ -9,6 +9,7 @@ import {
   type OrderDocument,
 } from '../../models/Order.js';
 import { OrderStatusEventModel } from '../../models/OrderStatusEvent.js';
+import { LoyaltyLedgerEntryModel } from '../../models/LoyaltyLedgerEntry.js';
 import { ProductModel, type ProductDocument } from '../../models/Product.js';
 import type { UserDto } from '../auth/auth.dto.js';
 import { ApiError } from '../../utils/apiError.js';
@@ -25,12 +26,22 @@ import {
 } from './order.dto.js';
 import { countItemsByOrder } from './orderItemCounts.js';
 import { computeOrderTotals, type OrderTotals } from './orderTotals.js';
+import {
+  aggregatePoints,
+  getAccount,
+  getActiveTierByCode,
+  getOrCreateAccount,
+  maxRedeemablePoints,
+  redeemPoints,
+  shippingFeeForTier,
+  validateRedemption,
+} from '../loyalty/loyalty.service.js';
 
 /**
- * Flat shipping fee until Epic 8 tier free-shipping lands; stays a constant
- * so the totals block always comes from `computeOrderTotals`, never the client.
+ * Flat shipping fee lives in `orderTotals.ts` with the other money constants;
+ * tier free-shipping (Epic 8) can zero it out via `shippingFeeForTier`.
  */
-export const SHIPPING_FEE_VND = 30_000;
+export { SHIPPING_FEE_VND } from './orderTotals.js';
 
 const MAX_ORDER_NO_ATTEMPTS = 5;
 
@@ -50,6 +61,11 @@ const checkoutSchema = z.object({
   shipping: shippingFieldsSchema.optional(),
   contactEmail: z.string().trim().toLowerCase().email('Email không hợp lệ').max(254).optional(),
   notesCustomer: z.string().trim().max(500).optional().default(''),
+  pointsToRedeem: z.number().int().min(0).optional().default(0),
+});
+
+const previewSchema = z.object({
+  pointsToRedeem: z.number().int().min(0).optional().default(0),
 });
 
 const orderListQuerySchema = paginationQuerySchema;
@@ -179,6 +195,8 @@ async function undoOrderWrites(orderId: Types.ObjectId | undefined, lines: Order
   if (orderId) {
     await OrderItemModel.deleteMany({ orderId }).catch(() => undefined);
     await OrderStatusEventModel.deleteMany({ orderId }).catch(() => undefined);
+    // Epic 8 — a compensated order must not leave its redemption behind.
+    await LoyaltyLedgerEntryModel.deleteMany({ orderId }).catch(() => undefined);
     await OrderModel.deleteOne({ _id: orderId }).catch(() => undefined);
   }
   for (const line of lines) {
@@ -206,9 +224,27 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
   }
 
   const { lines } = await buildOrderLines(items);
-  await reserveOrderStock(lines);
 
-  const totals = computeOrderTotals({ lineItems: lines, shippingFee: SHIPPING_FEE_VND });
+  // Epic 8 — loyalty, resolved BEFORE stock is reserved so a rejected
+  // redemption never leaks reservations. Free shipping is evaluated on the
+  // discounted subtotal pre-redemption (discountAmount stays 0 until Epic 9,
+  // but the ordering is already correct for when coupons land).
+  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+  const discountAmount = 0;
+  const loyaltyAccount = await getOrCreateAccount(user.id);
+  const tier = await getActiveTierByCode(loyaltyAccount.tierCode);
+  if (data.pointsToRedeem > 0) {
+    const { balance } = await aggregatePoints(user.id);
+    validateRedemption(data.pointsToRedeem, subtotal, balance);
+  }
+  const shippingFee = shippingFeeForTier(tier, subtotal - discountAmount);
+  const totals = computeOrderTotals({
+    lineItems: lines,
+    shippingFee,
+    pointsRedeemed: data.pointsToRedeem,
+  });
+
+  await reserveOrderStock(lines);
 
   let order: OrderDocument | null = null;
   try {
@@ -223,7 +259,7 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
           paidAt: null,
           totals,
           inventoryState: 'reserved',
-          membershipTierCode: null,
+          membershipTierCode: loyaltyAccount.tierCode,
           shippingFullName: shipping.fullName,
           shippingPhone: shipping.phone,
           shippingLine1: shipping.line1,
@@ -250,6 +286,16 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
       changedBy: user.id,
       reason: 'Đặt hàng thành công',
     });
+    // Epic 8 — redemption is deducted at order creation, inside the
+    // compensate-on-failure block. Cancelled orders never refund points.
+    if (data.pointsToRedeem > 0) {
+      await redeemPoints({
+        userId: user.id,
+        orderId: order!._id,
+        orderNo: order!.orderNo,
+        points: data.pointsToRedeem,
+      });
+    }
     await recordAudit({
       actor: { userId: user.id, role: 'customer', label: user.fullName },
       action: 'order.create',
@@ -270,20 +316,63 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
   return toOrderDetailDto(order!, orderItems, events);
 }
 
+export interface OrderPreviewDto {
+  itemCount: number;
+  totals: OrderTotals;
+  loyalty: {
+    balance: number;
+    tierCode: string;
+    tierName: string;
+    earnMultiplier: number;
+    freeShippingThreshold: number | null;
+    freeShippingApplied: boolean;
+    maxRedeemablePoints: number;
+    pointsToRedeem: number;
+  };
+}
+
 /**
  * `POST /orders/preview` — server-side totals for the checkout screen so the
- * client never computes money (FR-09.7a). Coupon/points stay at zero until
- * Epics 8/9 land; the schema fields are preserved.
+ * client never computes money (FR-09.7a). Epic 8: accepts `pointsToRedeem`
+ * and applies the same strict rejection rules as checkout; tier free
+ * shipping is evaluated on the discounted subtotal before redemption.
  */
-export async function previewOrder(user: UserDto): Promise<{ itemCount: number; totals: OrderTotals }> {
+export async function previewOrder(user: UserDto, input: unknown): Promise<OrderPreviewDto> {
+  const data = parseInput(previewSchema, input ?? {});
   const { items } = await loadCartItems(user.id);
   if (items.length === 0) {
     throw new ApiError(400, 'CART_EMPTY', 'Giỏ hàng đang trống');
   }
   const { lines } = await buildOrderLines(items);
+
+  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+  const discountAmount = 0;
+  const account = await getAccount(user.id);
+  const tierCode = account?.tierCode ?? 'BRONZE';
+  const tier = await getActiveTierByCode(tierCode);
+  const { balance } = await aggregatePoints(user.id);
+  if (data.pointsToRedeem > 0) {
+    validateRedemption(data.pointsToRedeem, subtotal, balance);
+  }
+  const shippingFee = shippingFeeForTier(tier, subtotal - discountAmount);
+
   return {
     itemCount: items.reduce((sum, item) => sum + item.qty, 0),
-    totals: computeOrderTotals({ lineItems: lines, shippingFee: SHIPPING_FEE_VND }),
+    totals: computeOrderTotals({
+      lineItems: lines,
+      shippingFee,
+      pointsRedeemed: data.pointsToRedeem,
+    }),
+    loyalty: {
+      balance,
+      tierCode,
+      tierName: tier?.name ?? tierCode,
+      earnMultiplier: tier?.earnMultiplier ?? 1,
+      freeShippingThreshold: tier?.freeShippingThreshold ?? null,
+      freeShippingApplied: shippingFee === 0 && tier?.freeShippingThreshold != null,
+      maxRedeemablePoints: maxRedeemablePoints(balance, subtotal),
+      pointsToRedeem: data.pointsToRedeem,
+    },
   };
 }
 

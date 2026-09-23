@@ -6,6 +6,7 @@ import { AdminCustomerDetailPage } from './pages/admin/AdminCustomerDetailPage';
 import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
+import { AdminLoyaltyTiersPage } from './pages/admin/AdminLoyaltyTiersPage';
 import { AdminOrderDetailPage } from './pages/admin/AdminOrderDetailPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminBannersPage } from './pages/admin/AdminBannersPage';
@@ -21,6 +22,7 @@ import { EmployeeOrdersPage } from './pages/EmployeeOrdersPage';
 import { EmployeeReviewsPage } from './pages/EmployeeReviewsPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { LoyaltyPage } from './pages/LoyaltyPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { OrdersPage } from './pages/OrdersPage';
@@ -74,6 +76,14 @@ export function App() {
           element={
             <RequireRole roles={['customer']}>
               <AddressesPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="loyalty"
+          element={
+            <RequireRole roles={['customer']}>
+              <LoyaltyPage />
             </RequireRole>
           }
         />
@@ -137,6 +147,7 @@ export function App() {
           <Route path="banners" element={<AdminBannersPage />} />
           <Route path="customers" element={<AdminCustomersPage />} />
           <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
+          <Route path="loyalty" element={<AdminLoyaltyTiersPage />} />
           <Route path="staff" element={<AdminStaffPage />} />
         </Route>
         <Route path="login" element={<LoginPage />} />

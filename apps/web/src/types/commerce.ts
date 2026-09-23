@@ -100,15 +100,28 @@ export interface OrderDetail {
   paidAt: string | null;
   createdAt: string;
   notesCustomer: string;
+  membershipTierCode?: string | null;
   items: OrderItem[];
   totals: OrderTotals;
   shipping: OrderShipping;
   timeline: OrderTimelineEvent[];
 }
 
+export interface OrderPreviewLoyalty {
+  balance: number;
+  tierCode: string;
+  tierName: string;
+  earnMultiplier: number;
+  freeShippingThreshold: number | null;
+  freeShippingApplied: boolean;
+  maxRedeemablePoints: number;
+  pointsToRedeem: number;
+}
+
 export interface OrderPreview {
   itemCount: number;
   totals: OrderTotals;
+  loyalty: OrderPreviewLoyalty;
 }
 
 export type InventoryState = 'reserved' | 'deducted' | 'released';
@@ -144,4 +157,5 @@ export interface CheckoutInput {
   };
   contactEmail?: string;
   notesCustomer?: string;
+  pointsToRedeem?: number;
 }

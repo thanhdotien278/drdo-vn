@@ -13,6 +13,13 @@ import { ApiError } from '../../utils/apiError.js';
 /** VND granted per redeemed loyalty point (FR-08.7). */
 export const POINT_VALUE_VND = 10;
 
+/** Epic 8 — redemption rules: multiples of 100 points, capped at 20% of subtotal. */
+export const POINTS_REDEMPTION_STEP = 100;
+export const POINTS_REDEMPTION_CAP_RATIO = 0.2;
+
+/** Flat shipping fee charged when no tier free-shipping benefit applies. */
+export const SHIPPING_FEE_VND = 30_000;
+
 export const COUPON_DISCOUNT_TYPES = ['percentage', 'fixed_amount'] as const;
 export type CouponDiscountType = (typeof COUPON_DISCOUNT_TYPES)[number];
 

@@ -9,6 +9,8 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { adminBannerRouter, publicBannerRouter } from './modules/banners/banner.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
+import { loyaltyAdminRouter } from './modules/loyalty/loyaltyAdmin.routes.js';
+import { loyaltyRouter } from './modules/loyalty/loyalty.routes.js';
 import { orderRouter } from './modules/orders/order.routes.js';
 import { createStaffOrderRouter } from './modules/orders/orderManagement.routes.js';
 import { reviewRouter } from './modules/reviews/review.routes.js';
@@ -41,6 +43,8 @@ export function createApp(): Express {
   app.use('/api', wishlistRouter);
   app.use('/api', reviewRouter);
   app.use('/api', publicBannerRouter);
+  // Epic 8 — customer loyalty summary/history.
+  app.use('/api', loyaltyRouter);
   app.use('/api/employee', createStaffOrderRouter('employee'));
   // Story 7.4 — the identical moderation workflow mounted for both staff
   // roles; the shared service keeps approve/reject/delete single-sourced.
@@ -50,6 +54,8 @@ export function createApp(): Express {
   // Epic 4 service keeps transition/payment rules single-sourced.
   app.use('/api/admin', createStaffOrderRouter('admin'));
   app.use('/api/admin', adminBannerRouter);
+  // Epic 8 — admin tier config and manual point adjustments.
+  app.use('/api/admin', loyaltyAdminRouter);
   app.use('/api/admin', adminRouter);
 
   app.use(notFoundHandler);

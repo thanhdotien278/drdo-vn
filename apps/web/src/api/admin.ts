@@ -10,6 +10,7 @@ import type {
 } from '../types/admin';
 import type { UserRole } from '../types/auth';
 import type { PageMeta } from '../types/catalog';
+import type { AdminCustomerLoyalty, LoyaltyEntry, MembershipTier } from '../types/loyalty';
 import { apiGet, apiRequest, apiUpload } from './client';
 import { staffOrdersApi } from './staffOrders';
 
@@ -259,4 +260,47 @@ export function setAdminStaffStatus(
   return apiRequest<AdminStaff>('PATCH', `/admin/staff/${encodeURIComponent(id)}/status`, {
     body: { status, ...(note ? { note } : {}) },
   });
+}
+
+// ---------- Loyalty (Epic 8) ----------
+
+export function fetchAdminLoyaltyTiers(): Promise<{ data: MembershipTier[] }> {
+  return apiGet<MembershipTier[]>('/admin/loyalty/tiers');
+}
+
+export function updateAdminLoyaltyTier(
+  id: string,
+  input: Partial<
+    Pick<
+      MembershipTier,
+      'name' | 'minLifetimePoints' | 'earnMultiplier' | 'freeShippingThreshold' | 'isActive'
+    >
+  >,
+): Promise<{ data: MembershipTier }> {
+  return apiRequest<MembershipTier>('PATCH', `/admin/loyalty/tiers/${encodeURIComponent(id)}`, {
+    body: input,
+  });
+}
+
+export async function fetchAdminCustomerLoyalty(
+  id: string,
+  page = 1,
+  limit = 10,
+): Promise<{ data: AdminCustomerLoyalty; meta: PageMeta }> {
+  const result = await apiGet<AdminCustomerLoyalty>(
+    `/admin/customers/${encodeURIComponent(id)}/loyalty`,
+    { page, limit },
+  );
+  return { data: result.data, meta: result.meta as PageMeta };
+}
+
+export function adjustAdminCustomerPoints(
+  id: string,
+  input: { points: number; reason: string },
+): Promise<{ data: LoyaltyEntry }> {
+  return apiRequest<LoyaltyEntry>(
+    'POST',
+    `/admin/customers/${encodeURIComponent(id)}/loyalty/adjustments`,
+    { body: input },
+  );
 }

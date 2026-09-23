@@ -23,7 +23,7 @@ orderRouter.post(
 orderRouter.post(
   '/orders/preview',
   asyncHandler(async (req, res) => {
-    res.json({ data: await previewOrder(getAuthUser(req)) });
+    res.json({ data: await previewOrder(getAuthUser(req), req.body) });
   }),
 );
 

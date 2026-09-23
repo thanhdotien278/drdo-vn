@@ -31,6 +31,14 @@ export function CheckoutPage() {
   const addresses = useAsync<Address[]>(async () => (await fetchAddresses()).data, []);
   const preview = useAsync<OrderPreview>(async () => (await previewOrder()).data, []);
 
+  // Epic 8 — loyalty points. `appliedPoints` is the last server-validated
+  // amount; `previewOverride` holds the re-preview result after applying.
+  const [pointsInput, setPointsInput] = useState('');
+  const [appliedPoints, setAppliedPoints] = useState(0);
+  const [previewOverride, setPreviewOverride] = useState<OrderPreview | null>(null);
+  const [pointsError, setPointsError] = useState<string | null>(null);
+  const [applyingPoints, setApplyingPoints] = useState(false);
+
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('saved');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [shipping, setShipping] = useState(EMPTY_SHIPPING);
@@ -58,15 +66,46 @@ export function CheckoutPage() {
 
   const effectiveMode = addressMode === 'saved' && (addresses.data ?? []).length === 0 ? 'new' : addressMode;
 
+  async function applyPoints(points: number) {
+    setPointsError(null);
+    setApplyingPoints(true);
+    try {
+      const { data } = await previewOrder(points);
+      setPreviewOverride(data);
+      setAppliedPoints(data.loyalty.pointsToRedeem);
+    } catch (err) {
+      setPointsError(
+        err instanceof ApiRequestError ? err.message : 'Không áp dụng được điểm. Vui lòng thử lại.',
+      );
+    } finally {
+      setApplyingPoints(false);
+    }
+  }
+
+  function handleApplyPoints() {
+    const points = Number(pointsInput.trim());
+    if (!Number.isInteger(points) || points < 0) {
+      setPointsError('Số điểm không hợp lệ');
+      return;
+    }
+    void applyPoints(points);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    // A value typed but never "applied" must not be silently dropped: honor
+    // the dirty input and let the server strictly validate it.
+    const typed = pointsInput.trim() === '' ? null : Number(pointsInput.trim());
+    const submittedPoints =
+      typed !== null && Number.isInteger(typed) && typed >= 0 ? typed : appliedPoints;
     setSubmitting(true);
     try {
       const { data: order } = await createOrder({
         paymentMethod,
         contactEmail: contactEmail.trim() || undefined,
         notesCustomer: notes.trim() || undefined,
+        pointsToRedeem: submittedPoints > 0 ? submittedPoints : undefined,
         ...(effectiveMode === 'saved' && effectiveAddressId
           ? { addressId: effectiveAddressId }
           : { shipping }),
@@ -76,7 +115,12 @@ export function CheckoutPage() {
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Không đặt được đơn hàng. Vui lòng thử lại.');
       await refresh();
-      preview.reload();
+      // Re-run the preview so totals/loyalty reflect the post-failure state.
+      if (submittedPoints > 0) {
+        await applyPoints(submittedPoints);
+      } else {
+        preview.reload();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +166,9 @@ export function CheckoutPage() {
     );
   }
 
-  const totals = preview.data?.totals;
+  const effectivePreview = previewOverride ?? preview.data;
+  const totals = effectivePreview?.totals;
+  const loyalty = effectivePreview?.loyalty;
 
   return (
     <div className="page checkout-page">
@@ -281,6 +327,65 @@ export function CheckoutPage() {
               nhận được tiền.
             </p>
           </section>
+
+          <section className="checkout-panel" aria-labelledby="loyalty-heading">
+            <h2 id="loyalty-heading">Điểm thưởng</h2>
+            {loyalty ? (
+              <>
+                <p className="muted">
+                  Hạng {loyalty.tierName} · Số dư {loyalty.balance.toLocaleString('vi-VN')} điểm
+                  {loyalty.maxRedeemablePoints > 0
+                    ? ` · Có thể dùng tối đa ${loyalty.maxRedeemablePoints.toLocaleString('vi-VN')} điểm cho đơn này`
+                    : ''}
+                </p>
+                <div className="form-field">
+                  <label htmlFor="points-to-redeem">Số điểm muốn dùng (bội số của 100)</label>
+                  <input
+                    id="points-to-redeem"
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={pointsInput}
+                    onChange={(event) => setPointsInput(event.target.value)}
+                    disabled={loyalty.maxRedeemablePoints === 0}
+                  />
+                </div>
+                <div className="admin-form__actions">
+                  <button
+                    type="button"
+                    className="button button--outline"
+                    disabled={applyingPoints || loyalty.maxRedeemablePoints === 0}
+                    onClick={handleApplyPoints}
+                  >
+                    {applyingPoints ? 'Đang áp dụng…' : 'Áp dụng điểm'}
+                  </button>
+                  {appliedPoints > 0 ? (
+                    <button
+                      type="button"
+                      className="link-button"
+                      disabled={applyingPoints}
+                      onClick={() => {
+                        setPointsInput('');
+                        void applyPoints(0);
+                      }}
+                    >
+                      Bỏ dùng điểm
+                    </button>
+                  ) : null}
+                </div>
+                {pointsError ? (
+                  <p className="error-text" role="alert">
+                    {pointsError}
+                  </p>
+                ) : null}
+                {appliedPoints > 0 ? (
+                  <p className="muted">Đang dùng {appliedPoints.toLocaleString('vi-VN')} điểm.</p>
+                ) : null}
+              </>
+            ) : (
+              <p className="muted">Đăng nhập để xem và dùng điểm thưởng.</p>
+            )}
+          </section>
         </div>
 
         <aside className="cart-summary">
@@ -301,10 +406,21 @@ export function CheckoutPage() {
                 <dt>Tạm tính</dt>
                 <dd>{formatVnd(totals.subtotal)}</dd>
               </div>
+              {totals.pointsDiscountAmount > 0 ? (
+                <div className="summary-row">
+                  <dt>Điểm thưởng ({totals.pointsRedeemed.toLocaleString('vi-VN')} điểm)</dt>
+                  <dd>-{formatVnd(totals.pointsDiscountAmount)}</dd>
+                </div>
+              ) : null}
               <div className="summary-row">
                 <dt>Phí vận chuyển</dt>
-                <dd>{formatVnd(totals.shippingFee)}</dd>
+                <dd>
+                  {loyalty?.freeShippingApplied ? 'Miễn phí' : formatVnd(totals.shippingFee)}
+                </dd>
               </div>
+              {loyalty?.freeShippingApplied ? (
+                <p className="muted">Miễn phí vận chuyển theo hạng {loyalty.tierName}.</p>
+              ) : null}
               <div className="summary-row summary-row--total">
                 <dt>Tổng cộng</dt>
                 <dd>{formatVnd(totals.grandTotal)}</dd>

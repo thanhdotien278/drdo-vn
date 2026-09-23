@@ -106,6 +106,9 @@ function AuthActions() {
           <Link className="site-header__auth-link" to="/addresses">
             Địa chỉ
           </Link>
+          <Link className="site-header__auth-link" to="/loyalty">
+            Điểm thưởng
+          </Link>
         </>
       ) : null}
       {user.roles.includes('employee') ? (

@@ -13,6 +13,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { buildPageMeta, paginationQuerySchema, skipForPage } from '../../utils/pagination.js';
 import { parseInput } from '../../utils/validate.js';
 import { recordAudit, type AuditActorInput } from '../audit/audit.service.js';
+import { accrueForOrder } from '../loyalty/loyalty.service.js';
 import { consumeOrderReservation, releaseOrderReservation } from './inventory.js';
 import { countItemsByOrder } from './orderItemCounts.js';
 import {
@@ -141,6 +142,10 @@ export async function transitionOrderStatus(
 
   if (toStatus === 'shipped') {
     await consumeOrderReservation(order._id);
+    // Epic 8 — loyalty accrual runs once per order at shipment. Errors
+    // propagate like the inventory side-effect (status already committed);
+    // a duplicate-key replay is a silent no-op inside accrueForOrder.
+    await accrueForOrder(order, actor);
   } else if (toStatus === 'cancelled') {
     await releaseOrderReservation(order._id);
   }

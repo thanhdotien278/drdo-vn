@@ -58,6 +58,7 @@ export interface OrderDetailDto {
   paidAt: string | null;
   createdAt: string;
   notesCustomer: string;
+  membershipTierCode: string | null;
   items: OrderItemDto[];
   totals: OrderTotals;
   shipping: OrderShippingDto;
@@ -134,6 +135,7 @@ export function toOrderDetailDto(
     paidAt: order.paidAt ? order.paidAt.toISOString() : null,
     createdAt: order.createdAt.toISOString(),
     notesCustomer: order.notesCustomer ?? '',
+    membershipTierCode: order.membershipTierCode ?? null,
     items: items.map(toOrderItemDto),
     totals: {
       subtotal: order.totals.subtotal,
