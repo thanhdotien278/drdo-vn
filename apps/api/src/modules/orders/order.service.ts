@@ -23,6 +23,7 @@ import {
   type OrderDetailDto,
   type OrderListItemDto,
 } from './order.dto.js';
+import { countItemsByOrder } from './orderItemCounts.js';
 import { computeOrderTotals, type OrderTotals } from './orderTotals.js';
 
 /**
@@ -298,11 +299,7 @@ export async function listOrders(
     OrderModel.countDocuments(filter).exec(),
   ]);
 
-  const counts = await OrderItemModel.aggregate<{ _id: Types.ObjectId; count: number }>([
-    { $match: { orderId: { $in: orders.map((order) => order._id) } } },
-    { $group: { _id: '$orderId', count: { $sum: '$qty' } } },
-  ]).exec();
-  const countByOrder = new Map(counts.map((entry) => [String(entry._id), entry.count]));
+  const countByOrder = await countItemsByOrder(orders.map((order) => order._id));
 
   return {
     items: orders.map((order) => toOrderListItemDto(order, countByOrder.get(String(order._id)) ?? 0)),

@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { z } from 'zod';
 import {
   ORDER_STATUSES,
@@ -15,6 +14,7 @@ import { buildPageMeta, paginationQuerySchema, skipForPage } from '../../utils/p
 import { parseInput } from '../../utils/validate.js';
 import { recordAudit, type AuditActorInput } from '../audit/audit.service.js';
 import { consumeOrderReservation, releaseOrderReservation } from './inventory.js';
+import { countItemsByOrder } from './orderItemCounts.js';
 import {
   toStaffOrderDetailDto,
   toStaffOrderListItemDto,
@@ -81,11 +81,7 @@ export async function listOrdersForStaff(
     OrderModel.countDocuments(filter).exec(),
   ]);
 
-  const counts = await OrderItemModel.aggregate<{ _id: Types.ObjectId; count: number }>([
-    { $match: { orderId: { $in: orders.map((order) => order._id) } } },
-    { $group: { _id: '$orderId', count: { $sum: '$qty' } } },
-  ]).exec();
-  const countByOrder = new Map(counts.map((entry) => [String(entry._id), entry.count]));
+  const countByOrder = await countItemsByOrder(orders.map((order) => order._id));
 
   return {
     items: orders.map((order) =>
