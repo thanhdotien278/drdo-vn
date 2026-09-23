@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { requireAuth } from '../../middleware/requireAuth.js';
+import { getAuthUser, requireAuth } from '../../middleware/requireAuth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 
 /**
@@ -10,8 +10,9 @@ import { requireRole } from '../../middleware/requireRole.js';
 export const rbacSmokeRouter = Router();
 
 function respond(area: string, req: Request, res: Response): void {
+  const user = getAuthUser(req);
   res.json({
-    data: { ok: true, area, userId: req.authUser!.id, roles: req.authUser!.roles },
+    data: { ok: true, area, userId: user.id, roles: user.roles },
   });
 }
 

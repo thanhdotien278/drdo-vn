@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { UserModel } from '../models/User.js';
-import { toUserDto } from '../modules/auth/auth.dto.js';
+import { toUserDto, type UserDto } from '../modules/auth/auth.dto.js';
 import { verifyAccessToken } from '../modules/auth/jwt.js';
 import { ApiError } from '../utils/apiError.js';
 
@@ -46,4 +46,15 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   } catch (error) {
     next(error);
   }
+}
+
+/**
+ * Reads the user set by `requireAuth`. Throws 401 instead of letting a
+ * handler mounted without the middleware dereference `undefined`.
+ */
+export function getAuthUser(req: Request): UserDto {
+  if (!req.authUser) {
+    throw ApiError.unauthorized();
+  }
+  return req.authUser;
 }
