@@ -43,7 +43,7 @@ This document is the developer source index for the clean rebuild. Prefer these 
 ## Runtime layout (Story 1.1 scaffold)
 
 ```
-apps/api/   Express + TypeScript API (port 4000)
+apps/api/   Express + TypeScript API (port 4005)
 apps/web/   React + Vite + TypeScript web app (port 5173, proxy /api + /uploads)
 docs/       Product and source references
 ```

@@ -5,7 +5,7 @@ Use this checklist to verify the MVP against `requirements.md`, `api-spec.md`, a
 ## Test Conventions
 
 - Result values: `Pass`, `Fail`, `Partial`, `Missing`, `Blocked`.
-- Default API URL for local checks: `http://localhost:4000`.
+- Default API URL for local checks: `http://localhost:4005`.
 - Default web URL for local checks: `http://localhost:5173`.
 - Use seeded admin, employee, and customer accounts (`npm run seed`).
 - `npm run smoke` walks the whole commerce loop against seeded data and asserts the inventory and RBAC invariants; run it before working through the manual rows.

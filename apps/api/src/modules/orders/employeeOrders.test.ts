@@ -213,7 +213,7 @@ test('customer and admin tokens are rejected by employee order APIs (403)', asyn
 });
 
 test('employee cannot reach admin-only surfaces (403)', async () => {
-  const res = await api('GET', '/api/admin/rbac-smoke', { token: staffToken });
+  const res = await api('GET', '/api/admin/dashboard', { token: staffToken });
   assert.equal(res.status, 403);
 });
 

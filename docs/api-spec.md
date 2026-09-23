@@ -1,148 +1,155 @@
 # DrDo.vn API Specification v1
 
-This is the MVP API contract. Payment provider integration is Phase 2; promotion, coupon, loyalty, wishlist, review, and banner APIs are **Phase 1 / MVP** (PRD FR-07 to FR-09, superseding ADR-0004).
+This is the MVP API contract for the surface implemented through Epic 5. Payment provider integration is Phase 2; the wishlist, review, banner, loyalty, promotion, and coupon APIs (PRD FR-07 to FR-09) are planned for Epics 7-9 and are **not implemented**, so they are intentionally absent here.
 
 ## Conventions
 
-- Authenticated requests require a bearer token or session cookie.
-- Anonymous protected requests return `401`.
-- Authenticated users without permission return `403`.
+- All routes below are mounted under `/api` (e.g. `POST /api/auth/login`). `GET /health` is an operational health endpoint, not a business API, and stays outside `/api`; `GET /uploads/**` is also unversioned.
+- Authenticated requests require an `Authorization: Bearer <jwt>` header; there is no session cookie.
+- Anonymous protected requests return `401` (`UNAUTHORIZED`, `INVALID_TOKEN`, `USER_NOT_FOUND`, `ACCOUNT_BLOCKED`, or `ACCOUNT_INACTIVE`). Authenticated users without the required role return `403 FORBIDDEN`.
 - Manual payment status values: `unpaid`, `paid`.
 - MVP payment methods: `cod`, `bank_transfer`, `momo_manual`.
+- Order status values: `pending`, `processing`, `shipped`, `delivered`, `cancelled`. The only legal transitions are `pending -> processing | cancelled`, `processing -> shipped | cancelled`, `shipped -> delivered`; `delivered` and `cancelled` are terminal.
 - Revenue uses `paidAt` for orders where `paymentStatus=paid` and `orderStatus != cancelled`.
-- Error bodies are always `{ error, code }`, with a SCREAMING_SNAKE `code`; some carry an extra `details` object.
-- Collections return `{ data }`, or `{ data, pagination: { page, limit, total, totalPages } }` when paginated. Single resources return a named key (`{ product }`, `{ order }`, …). Deletes return `{ ok: true }`.
+- Error bodies are always `{ error: { code, message, details? } }` with a SCREAMING_SNAKE `code`; validation failures carry flattened zod field errors in `details`.
+- Collections return `{ data }`, or `{ data, meta: { page, limit, total, totalPages, hasNextPage, hasPrevPage } }` when paginated (`page` >= 1, `limit` 1-48, default 12). Single resources return `{ data: ... }`, with named keys nested inside `data` where a response carries more than one thing (`{ data: { user } }`, `{ data: { customer, orders } }`, …).
+- Mutation responses always use the `{ data }` envelope. DELETE endpoints that do not need to return a resource (`/addresses/:id`, taxonomy deletes) return `{ data: { ok: true } }`; `DELETE /cart/items/:id` and the product/image deletes return the updated `{ data }` resource so the client can refresh state without a refetch.
 - **Roles are exact.** An admin does not implicitly hold the `employee` role: the same order-operations handlers are mounted twice, once under `/employee/orders` and once under `/admin/orders`, and each role uses its own prefix.
-- Every order carries the fixed seven-field totals block (`subtotal`, `discountAmount`, `couponRef`, `pointsRedeemed`, `pointsDiscountAmount`, `shippingFee`, `grandTotal`), always present even when zero, always computed server-side.
+- Every order carries the fixed seven-field totals block (`subtotal`, `discountAmount`, `couponRef`, `pointsRedeemed`, `pointsDiscountAmount`, `shippingFee`, `grandTotal`), always present even when zero, always computed server-side. `grandTotal = subtotal - discountAmount - pointsDiscountAmount + shippingFee`, clamped at 0.
 - Uploaded images are served from `/uploads/**`; an `:imageId` path parameter **is the stored filename**.
+- Staff mutations (order operations, catalog, customers, staff) write audit-log entries; reads are never audited.
 
 ## RBAC Matrix
 
 | Route / Action | Public | Customer | Employee | Admin |
 | --- | --- | --- | --- | --- |
-| `POST /auth/register` | Yes | Yes | No | No |
-| `POST /auth/login` | Yes | Yes | Yes | Yes |
-| `GET /auth/me` | No | Own profile | Own profile | Own profile |
-| `GET /products`, `GET /products/:slug`, `GET /categories`, `GET /brands` | Yes | Yes | Yes | Yes |
+| `POST /auth/register`, `POST /auth/login` | Yes | Yes | Yes | Yes |
+| `GET /auth/me`, `POST /auth/logout` | No | Own profile | Own profile | Own profile |
+| `GET /products`, `GET /products/featured`, `GET /products/:slug`, `GET /products/:slug/related`, `GET /categories`, `GET /brands` | Yes | Yes | Yes | Yes |
 | `GET /cart`, `POST /cart/items`, `PATCH /cart/items/:id`, `DELETE /cart/items/:id` | No | Own cart | No | No |
 | `GET /addresses`, `POST /addresses`, `PATCH /addresses/:id`, `DELETE /addresses/:id`, `PATCH /addresses/:id/default` | No | Own addresses | No | No |
-| `POST /orders`, `GET /orders`, `GET /orders/:orderNo` | No | Own orders only | No | No |
+| `POST /orders`, `POST /orders/preview`, `GET /orders`, `GET /orders/:orderNo` | No | Own orders only | No | No |
 | `GET /employee/orders`, `GET /employee/orders/:orderNo` | No | No | Yes | No |
-| `PATCH /employee/orders/:orderNo/status` | No | No | Yes | No |
-| `PATCH /employee/orders/:orderNo/payment` | No | No | Yes | No |
-| `GET /admin/dashboard` | No | No | No | Yes |
-| `GET /admin/products`, `POST /admin/products`, `PATCH /admin/products/:id`, `DELETE /admin/products/:id` | No | No | No | Yes |
+| `PATCH /employee/orders/:orderNo/status`, `PATCH /employee/orders/:orderNo/payment` | No | No | Yes | No |
+| `GET /admin/dashboard`, `GET /admin/audit-logs` | No | No | No | Yes |
+| `GET /admin/products`, `GET /admin/products/:id`, `POST /admin/products`, `PATCH /admin/products/:id`, `DELETE /admin/products/:id` | No | No | No | Yes |
+| `POST /admin/products/:id/images`, `PATCH /admin/products/:id/images/:imageId`, `DELETE /admin/products/:id/images/:imageId` | No | No | No | Yes |
 | `GET /admin/categories`, `POST /admin/categories`, `PATCH /admin/categories/:id`, `DELETE /admin/categories/:id` | No | No | No | Yes |
 | `GET /admin/brands`, `POST /admin/brands`, `PATCH /admin/brands/:id`, `DELETE /admin/brands/:id` | No | No | No | Yes |
 | `GET /admin/orders`, `GET /admin/orders/:orderNo` | No | No | No | Yes |
-| `PATCH /admin/orders/:orderNo/status` | No | No | No | Yes |
-| `PATCH /admin/orders/:orderNo/payment` | No | No | No | Yes |
+| `PATCH /admin/orders/:orderNo/status`, `PATCH /admin/orders/:orderNo/payment` | No | No | No | Yes |
 | `GET /admin/customers`, `GET /admin/customers/:id`, `PATCH /admin/customers/:id/status` | No | No | No | Yes |
 | `GET /admin/staff`, `POST /admin/staff`, `PATCH /admin/staff/:id/role`, `PATCH /admin/staff/:id/status` | No | No | No | Yes |
-| `GET /admin/audit-logs` | No | No | No | Yes |
-| `POST /orders/preview` | No | Own cart | No | No |
-| `POST /coupons/validate` | No | Own cart | No | No |
-| `GET /wishlist`, `POST /wishlist/items`, `DELETE /wishlist/items/:productId`, `POST /wishlist/items/:productId/move-to-cart` | No | Own wishlist | No | No |
-| `GET /products/:slug/reviews` | Yes | Yes | Yes | Yes |
-| `POST /products/:slug/reviews` | No | Purchasers only | No | No |
-| `PATCH /reviews/:id`, `DELETE /reviews/:id`, `GET /reviews/me` | No | Own reviews | No | No |
-| `GET /banners` | Yes | Yes | Yes | Yes |
-| `GET /loyalty/me`, `GET /loyalty/me/ledger` | No | Own account | No | No |
-| `GET /employee/reviews`, `PATCH /employee/reviews/:id/status`, `DELETE /employee/reviews/:id` | No | No | Yes | No |
-| `GET /employee/coupons`, `GET /employee/coupons/:code` | No | No | Read-only | No |
-| `GET /admin/reviews`, `PATCH /admin/reviews/:id/status`, `DELETE /admin/reviews/:id` | No | No | No | Yes |
-| `POST /admin/products/:id/images`, `PATCH /admin/products/:id/images/:imageId`, `DELETE /admin/products/:id/images/:imageId` | No | No | No | Yes |
-| `GET /admin/banners`, `POST /admin/banners`, `PATCH /admin/banners/:id`, `DELETE /admin/banners/:id`, `POST /admin/banners/:id/image`, `PATCH /admin/banners/reorder` | No | No | No | Yes |
-| `GET /admin/promotions`, `POST /admin/promotions`, `PATCH /admin/promotions/:id`, `DELETE /admin/promotions/:id` | No | No | No | Yes |
-| `GET /admin/coupons`, `POST /admin/coupons`, `PATCH /admin/coupons/:id`, `DELETE /admin/coupons/:id`, `GET /admin/coupons/:id/redemptions` | No | No | No | Yes |
-| `GET /admin/membership-tiers`, `POST /admin/membership-tiers`, `PATCH /admin/membership-tiers/:id` | No | No | No | Yes |
-| `GET /admin/customers/:id/loyalty`, `POST /admin/customers/:id/loyalty/adjustments` | No | No | No | Yes |
 | `GET /uploads/**` | Yes | Yes | Yes | Yes |
 
 Notes on this matrix:
 
-- **Employees have no coupon or promotion write route at all.** FR-09.1 is enforced by the absence of those handlers, not by a permission flag, so there is no code path to misconfigure. FR-09.1a is satisfied by the read-only routes above plus the coupon snapshot already stored on each order.
-- **Employees cannot adjust loyalty points** (FR-08.11) for the same reason: the adjustment route exists only under `/admin`.
-- **Employees are excluded from the dashboard, catalog, customer, staff, and audit surfaces** (ADR-0010).
-- `POST /orders/preview` exists because FR-09.7a forbids trusting client-computed totals: it is the only way the checkout screen can display a discount, the value of redeemed points, or the shipping fee before submitting. A rejected coupon is returned as `couponError` with HTTP 200 so the rest of the totals still render.
+- `POST /auth/register` has no role guard at all — anyone, including a logged-in staff account, can create a customer account. The payload carries no role field and client-supplied `roles`/`status` values are ignored: registration always creates a `customer` account; only `POST /admin/staff` may create staff.
+- **Employees are excluded from the dashboard, catalog, customer, staff, and audit surfaces** (ADR-0010) — those routes exist only under `/admin` and require the exact `admin` role.
+- `POST /orders/preview` exists because FR-09.7a forbids trusting client-computed totals: it is the only way the checkout screen can display the shipping fee or final `grandTotal` before submitting. Coupon and points fields stay zero until Epics 8-9 land.
 
 ## Authentication
 
-- `POST /auth/register` - Register a new customer.
-- `POST /auth/login` - Login for customer, employee, and admin.
-- `GET /auth/me` - Get current user profile.
+- `POST /auth/register` - Register a new customer. Body `{ email, password (8-128 chars), fullName, phone? }`; returns `201 { data: { token, user } }` where `user` is `{ id, email, fullName, phone, roles, status }`. `409` when the email is already registered.
+- `POST /auth/login` - Login for customer, employee, and admin. Body `{ email, password }`; returns `{ data: { token, user } }`. `401` on bad credentials; `403 ACCOUNT_BLOCKED` or `403 ACCOUNT_INACTIVE` when the account is not `active`.
+- `GET /auth/me` - Get current user profile; returns `{ data: { user } }`.
+- `POST /auth/logout` - Bearer tokens are stateless so logout is a client-side discard; this endpoint only confirms the request was authenticated and returns `{ data: { ok: true } }`.
 
 ## Catalog
 
-- `GET /products` - List active products. Query: `page`, `limit`, `q`, `category`, `brand`, `minPrice`, `maxPrice`, `availability`, `sort`.
-- `GET /products/:slug` - Get active product details by slug.
-- `GET /categories` - List active categories.
-- `GET /brands` - List active brands.
+All catalog routes are public and expose only active, non-deleted records.
+
+- `GET /products` - List active products. Query: `page`, `limit`, `q` (matches name, shortDescription, slug, sku), `category` and `brand` (comma-separated **slugs**, max 20 each), `minPrice`, `maxPrice`, `availability` = `all | in_stock | out_of_stock`, `sort` = `newest | price_asc | price_desc | popular`. Returns `{ data: ProductListItem[], meta }`. `400` when `minPrice > maxPrice`.
+- `GET /products/featured` - `{ data: { bestSellers, newArrivals, onSale } }`, up to 8 products each (`onSale` = `effectivePrice < price`).
+- `GET /products/:slug` - Get active product detail by slug; `404` for unknown, inactive, or deleted products.
+- `GET /products/:slug/related` - Up to 4 active products sharing the product's category or brand, best-sellers first.
+- `GET /categories` - List active categories sorted by `displayOrder` then name.
+- `GET /brands` - List active brands sorted by `displayOrder` then name.
+
+`ProductListItem` is `{ id, name, slug, sku, shortDescription, price, salePrice, effectivePrice, discountPercent, images[{ url, alt, isPrimary }], category, brand, availableStock, inStock, ratingAverage, ratingCount, volume }`; the detail adds `description`, `ingredients`, `benefits[]`, `usageInstructions`, `skinTypes[]`.
 
 ## Cart
 
-- `GET /cart` - Get current customer's cart.
-- `POST /cart/items` - Add or merge item into cart.
-- `PATCH /cart/items/:id` - Update cart item quantity.
-- `DELETE /cart/items/:id` - Remove cart item.
+Customer role only; the cart is created lazily on first use.
+
+- `GET /cart` - Get current customer's cart: `{ data: { id, items, itemCount, subtotal } }`. Each item is `{ id, product, qty, unitPrice, lineTotal }`; `unitPrice` is the stored snapshot while `product` carries the live `effectivePrice`, `availableStock`, `inStock`, and `purchasable` (false when the product was deactivated after being added; `product` is `null` when it no longer exists).
+- `POST /cart/items` - Add or merge item into cart. Body `{ productId, qty? }` (`qty` 1-999, default 1); re-snapshots the price. Returns `201 { data: cart }`. Errors: `400 PRODUCT_UNAVAILABLE`, `400 INSUFFICIENT_STOCK` (`details` carry `productId` and `availableStock`).
+- `PATCH /cart/items/:id` - Update cart item quantity. Body `{ qty }` (1-999); same stock errors; `404` when the item is not in the caller's cart.
+- `DELETE /cart/items/:id` - Remove cart item; returns `{ data: cart }` (not `{ ok: true }`).
 
 ## Customer Addresses
 
-- `GET /addresses` - List current customer's saved shipping addresses.
-- `POST /addresses` - Create a saved shipping address without postal code.
-- `PATCH /addresses/:id` - Update current customer's saved shipping address.
-- `DELETE /addresses/:id` - Delete current customer's saved shipping address.
-- `PATCH /addresses/:id/default` - Set current customer's default saved shipping address.
+Customer role only; addresses have no postal code. Body for create/update is `{ fullName, phone, line1, line2?, ward, district, province, isDefault? }` (partial on update). All routes are scoped to the caller — foreign or malformed ids return `404`.
+
+- `GET /addresses` - List saved shipping addresses, default first then oldest.
+- `POST /addresses` - Create a saved shipping address; `201`. The first saved address becomes default automatically; `isDefault: true` clears other defaults.
+- `PATCH /addresses/:id` - Update a saved shipping address.
+- `DELETE /addresses/:id` - Delete a saved shipping address; returns `{ data: { ok: true } }`. Deleting the default promotes the oldest remaining address.
+- `PATCH /addresses/:id/default` - Set the default saved shipping address; returns `{ data: address }`.
 
 ## Customer Orders
 
-- `POST /orders` - Create order from current cart. New orders always use `paymentStatus=unpaid`.
-- `GET /orders` - List current customer's orders newest first.
-- `GET /orders/:orderNo` - Get current customer's order detail.
+Customer role only; customers see their own orders and have no status/payment mutation route.
+
+- `POST /orders` - Create order from the current cart. Body `{ paymentMethod, addressId?, shipping?, contactEmail?, notesCustomer? }`: either `addressId` (a saved address owned by the caller) or an inline `shipping` object `{ fullName, phone, line1, line2?, ward, district, province }` is required. New orders are always `paymentStatus=unpaid`, `orderStatus=pending`; stock is **reserved** (not deducted) and the cart clears only after the order exists. Returns `201 { data: OrderDetail }`. Errors: `400 CART_EMPTY`, `400 SHIPPING_REQUIRED`, `400 PRODUCT_UNAVAILABLE`, `400 INSUFFICIENT_STOCK`, `404` for an `addressId` the caller does not own.
+- `POST /orders/preview` - Server-computed totals for the checkout screen. No body; returns `{ data: { itemCount, totals } }` with the full seven-field block (coupon/points fields stay zero until Epics 8-9). Same `CART_EMPTY`/`PRODUCT_UNAVAILABLE`/`INSUFFICIENT_STOCK` errors as checkout.
+- `GET /orders` - List current customer's orders newest first. Query `page`, `limit`. Items are `{ id, orderNo, orderStatus, paymentStatus, paymentMethod, grandTotal, itemCount, createdAt }`.
+- `GET /orders/:orderNo` - Get current customer's order detail: `items[]`, `totals`, the immutable `shipping` snapshot, and the status `timeline[]`. `404` for foreign or unknown order numbers.
 
 ## Employee Orders
 
-- `GET /employee/orders` - List all orders for fulfillment.
-- `GET /employee/orders/:orderNo` - Get order detail for fulfillment.
-- `PATCH /employee/orders/:orderNo/status` - Update order status using the shared state machine.
-- `PATCH /employee/orders/:orderNo/payment` - Manually set payment status to `unpaid` or `paid`; `unpaid -> paid` sets `paidAt`, `paid -> unpaid` clears `paidAt`, and every change writes an audit log.
+Employee role only.
+
+- `GET /employee/orders` - List all orders for fulfillment, newest first. Query `page`, `limit`, `status` (any order status). List items add `customerName` (the shipping recipient).
+- `GET /employee/orders/:orderNo` - Get order detail for fulfillment; adds `customer { id, fullName, email, phone }` (the account behind the order), `notesInternal`, and `inventoryState` (`reserved | deducted | released`).
+- `PATCH /employee/orders/:orderNo/status` - Update order status using the shared state machine (see Conventions). Body `{ status, reason? | note? }`. Shipping consumes the reservation (`inventoryState -> deducted`); cancelling releases it (`-> released`). Errors: `400 INVALID_STATUS_TRANSITION` (`details` carry `fromStatus`/`toStatus`), `409 ORDER_STATE_CHANGED` when a concurrent update wins. Writes an `order.status_change` audit log.
+- `PATCH /employee/orders/:orderNo/payment` - Manually set payment status. Body `{ paymentStatus: unpaid | paid, reason? | note? }`; `unpaid -> paid` sets `paidAt`, `paid -> unpaid` clears `paidAt`, and re-setting the current value is a no-op. Every real change writes an `order.payment_status_change` audit log; `409 ORDER_STATE_CHANGED` on a lost race.
 
 ## Admin Dashboard
 
-- `GET /admin/dashboard` - Get orders today/week, revenue today/week by `paidAt`, order counts by status, and low-stock products.
-- `GET /admin/audit-logs` - List audit logs. Query: `page`, `limit`, `actorId`, `entityType`, `entityId`, `action`.
+Admin role only.
+
+- `GET /admin/dashboard` - `{ data: { generatedAt, orders: { today, thisWeek, byStatus }, revenue: { today, thisWeek }, lowStockProducts[] } }`. Boundaries are server-local: today starts 00:00 local and the week starts the most recent Monday 00:00. Revenue is `SUM(totals.grandTotal)` over `paymentStatus=paid` and `orderStatus != cancelled`, grouped by `paidAt`. `lowStockProducts` are active products where `availableStock <= lowStockThreshold`, max 20, each `{ id, name, sku, stockOnHand, stockReserved, availableStock, lowStockThreshold }`.
+- `GET /admin/audit-logs` - List audit logs newest first. Query `page`, `limit`, `actorId` (must be a valid ObjectId), `entityType`, `entityId`, `action`. Entries are `{ id, actor { userId, role, label }, action, entityType, entityId, previousValue, nextValue, note, createdAt }`.
 
 ## Admin Catalog
 
-- `GET /admin/products` - List products including inactive/soft-deleted records.
-- `POST /admin/products` - Create product.
-- `POST /admin/products/:id/images` - Upload product images to `/uploads/products` until the product has 1-6 images; stores URL/path metadata.
-- `PATCH /admin/products/:id/images/:imageId` - Replace one product image file and update its URL/path metadata.
-- `DELETE /admin/products/:id/images/:imageId` - Delete one product image file and remove its URL/path metadata.
-- `PATCH /admin/products/:id` - Update product.
-- `DELETE /admin/products/:id` - Soft delete product.
-- `GET /admin/categories` - List categories.
-- `POST /admin/categories` - Create category.
-- `PATCH /admin/categories/:id` - Update category.
-- `DELETE /admin/categories/:id` - Soft delete category; blocked when products reference it.
-- `GET /admin/brands` - List brands.
-- `POST /admin/brands` - Create brand.
-- `PATCH /admin/brands/:id` - Update brand.
-- `DELETE /admin/brands/:id` - Soft delete brand; blocked when products reference it.
+Admin role only; list routes include inactive and soft-deleted records.
+
+- `GET /admin/products` - List products. Query `page`, `limit`, `q` (name, sku, slug), `status` = `all | active | inactive | deleted`.
+- `GET /admin/products/:id` - Get one product including `isActive`, `isDeleted`, `stockOnHand`/`stockReserved`/`availableStock`, `lowStockThreshold`, `soldCount`, and rating fields.
+- `POST /admin/products` - Create product. Body `{ name, slug?, sku, shortDescription?, description?, ingredients?, benefits?[], usageInstructions?, volume?, skinTypes?[], price, salePrice?, stockOnHand?, lowStockThreshold?, category, brand, isActive? }` where `category`/`brand` are ObjectIds; `slug` defaults to a slugified `name` and `sku` is uppercased. Returns `201 { data: product }`. Errors: `409 SLUG_TAKEN`, `409 SKU_TAKEN`, `400 INVALID_CATEGORY`, `400 INVALID_BRAND`.
+- `PATCH /admin/products/:id` - Update product; same fields, all optional. The slug only changes when `slug` is explicitly sent — renaming a product never silently changes its storefront URL. `409 PRODUCT_DELETED` when the product was soft-deleted, plus the uniqueness/reference errors above.
+- `DELETE /admin/products/:id` - Soft delete: sets `isDeleted` and `isActive=false` and releases the slug/sku namespace with a `--del-<timestamp>` suffix so a replacement can reuse them. Returns `{ data: product }`; `409 PRODUCT_DELETED` when already deleted.
+- `POST /admin/products/:id/images` - Upload product images. `multipart/form-data` with file field `images` (1-6 files per request, ≤5MB each, JPEG/PNG/WebP/GIF) and optional text field `alt` applied to every file. Files are written under `/uploads/products`; the DB stores `{ url, alt, isPrimary }` metadata only, and the first image on a product becomes primary. Errors: `400 UNSUPPORTED_FILE_TYPE`, `400 FILE_TOO_LARGE`, `400 INVALID_IMAGE_COUNT`, `400 IMAGE_LIMIT_EXCEEDED` (existing + new files would exceed 6), `409 PRODUCT_DELETED`.
+- `PATCH /admin/products/:id/images/:imageId` - Replace one product image. `multipart/form-data` with file field `image`; writes a new file, updates the stored URL, and removes the old file. `404` when `:imageId` is not a stored filename on the product.
+- `DELETE /admin/products/:id/images/:imageId` - Delete one product image file and its metadata; promotes the next image to primary when the removed one was primary. `404` for an unknown `:imageId`.
+- `GET /admin/categories` - List all categories including inactive/deleted; the DTO adds `isActive` and `isDeleted`.
+- `POST /admin/categories` - Create category. Body `{ name, slug?, description?, displayOrder?, isActive?, imageUrl? }`; `201`. `409 SLUG_TAKEN`.
+- `PATCH /admin/categories/:id` - Update category; same fields, all optional. `409 ALREADY_DELETED`, `409 SLUG_TAKEN`.
+- `DELETE /admin/categories/:id` - Soft delete releasing the slug; returns `{ data: { ok: true } }`. `409 CATEGORY_IN_USE` (with `details.products` = referencing count) when live products reference it; `409 ALREADY_DELETED`.
+- `GET /admin/brands` - List all brands including inactive/deleted; the DTO adds `displayOrder`, `isActive`, `isDeleted`.
+- `POST /admin/brands` - Create brand; body as categories plus `logoUrl?` and `country?` instead of `imageUrl`. `201`; `409 SLUG_TAKEN`.
+- `PATCH /admin/brands/:id` - Update brand; same rules. `409 ALREADY_DELETED`, `409 SLUG_TAKEN`.
+- `DELETE /admin/brands/:id` - Soft delete releasing the slug; `{ data: { ok: true } }`. `409 BRAND_IN_USE` when live products reference it; `409 ALREADY_DELETED`.
 
 ## Admin Orders And Payments
 
-- `GET /admin/orders` - List all orders.
-- `GET /admin/orders/:orderNo` - Get any order detail.
-- `PATCH /admin/orders/:orderNo/status` - Update order status using the shared state machine.
-- `PATCH /admin/orders/:orderNo/payment` - Manually set payment status to `unpaid` or `paid`; `unpaid -> paid` sets `paidAt`, `paid -> unpaid` clears `paidAt`, and every change writes an audit log.
+Admin role only. These are the identical Epic 4 handlers mounted a second time under `/admin/orders` — same request bodies, transition table, inventory side effects, and audit actions as the employee routes; only the actor role differs.
+
+- `GET /admin/orders` - List all orders. Query `page`, `limit`, `status`.
+- `GET /admin/orders/:orderNo` - Get any order detail (staff shape: `customer`, `notesInternal`, `inventoryState`).
+- `PATCH /admin/orders/:orderNo/status` - Update order status using the shared state machine. Body `{ status, reason? | note? }`. Errors: `400 INVALID_STATUS_TRANSITION`, `409 ORDER_STATE_CHANGED`.
+- `PATCH /admin/orders/:orderNo/payment` - Manually set payment status. Body `{ paymentStatus: unpaid | paid, reason? | note? }`; `unpaid -> paid` sets `paidAt`, `paid -> unpaid` clears `paidAt`, and every real change writes an audit log. `409 ORDER_STATE_CHANGED` on a lost race.
 
 ## Admin Customers And Staff
 
-- `GET /admin/customers` - List customers. Query: `page`, `limit`, `q`, `status`.
-- `GET /admin/customers/:id` - Get customer profile and order summary.
-- `PATCH /admin/customers/:id/status` - Block or unblock customer.
-- `GET /admin/staff` - List admin and employee users.
-- `POST /admin/staff` - Create staff member.
-- `PATCH /admin/staff/:id/role` - Set staff role to `admin` or `employee`.
-- `PATCH /admin/staff/:id/status` - Activate or deactivate staff; self-deactivation is rejected.
+Admin role only.
+
+- `GET /admin/customers` - List customers. Query `page`, `limit`, `q` (matches fullName, email, phone), `status` = `active | blocked | inactive`. Items are `{ id, email, fullName, phone, status, createdAt, lastLoginAt }`.
+- `GET /admin/customers/:id` - Get customer profile and order summary: `{ data: { customer, orders } }` where `orders` are the customer's order list items newest first. `400` for a malformed id; `404` when the user does not exist or is not a customer.
+- `PATCH /admin/customers/:id/status` - Block or unblock a customer. Body `{ status: active | blocked, note? }`; setting the current status is a no-op, real changes write a `customer.status_change` audit log. Blocking takes effect immediately: login returns `403` and protected API calls return `401`.
+- `GET /admin/staff` - List all users holding the `admin` or `employee` role, oldest first; returns `{ data: AdminStaff[] }` (not paginated) where each item adds `roles` to the customer shape.
+- `POST /admin/staff` - Create a staff member. Body `{ email, password (8-128 chars), fullName, phone?, role: admin | employee }`; returns `201 { data: staff }`. `409 EMAIL_TAKEN`.
+- `PATCH /admin/staff/:id/role` - Set staff role. Body `{ role: admin | employee, note? }`; no-op when unchanged, otherwise writes a `staff.role_change` audit log. `409 CANNOT_CHANGE_OWN_ROLE`.
+- `PATCH /admin/staff/:id/status` - Activate or deactivate staff. Body `{ status: active | inactive, note? }`; writes a `staff.status_change` audit log. `409 CANNOT_DEACTIVATE_SELF` — an admin cannot deactivate their own account.

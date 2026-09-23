@@ -5,7 +5,7 @@ Website bán sản phẩm chăm sóc da thiên nhiên (hiện có: catalog công
 - `apps/api` — Node.js + Express + TypeScript + MongoDB (Mongoose), JWT Bearer auth
 - `apps/web` — React + Vite + TypeScript (React Router, plain CSS)
 
-Nghiệp vụ nhân viên (Epic 4) và admin (Epic 5) chưa nằm trong phạm vi này — các route `/api/*/rbac-smoke` chỉ là seam để kiểm chứng phân quyền. Checkout không đánh dấu đơn là đã thanh toán; thanh toán là thủ công (Epic 4).
+Checkout không đánh dấu đơn là đã thanh toán; thanh toán là thủ công (Epic 4).
 
 Tài liệu nguồn (source of truth) nằm trong `docs/` — xem `docs/source-contract.md` để biết thứ tự đọc và các ràng buộc MVP.
 
@@ -13,8 +13,8 @@ Tài liệu nguồn (source of truth) nằm trong `docs/` — xem `docs/source-c
 
 ```
 apps/
-  api/        Backend Express + Mongoose (port 4000)
-  web/        Frontend React + Vite (port 5173, proxy /api → :4000)
+  api/        Backend Express + Mongoose (port 4005)
+  web/        Frontend React + Vite (port 5173, proxy /api → :4005)
 design-system/drdo-vn/MASTER.md   Design tokens & visual spec của giao diện
 ```
 
@@ -34,7 +34,7 @@ npm install
 
 # 2. Tạo file môi trường cho API
 cp apps/api/.env.example apps/api/.env
-#    Mặc định: PORT=4000, MONGODB_URI=mongodb://127.0.0.1:27017/drdo,
+#    Mặc định: PORT=4005, MONGODB_URI=mongodb://127.0.0.1:27017/drdo,
 #    CORS_ORIGIN=http://localhost:5173, JWT_SECRET=<dev fallback>, JWT_EXPIRES_IN=7d
 #    → chỉnh nếu cần; môi trường thật BẮT BUỘC đặt JWT_SECRET riêng.
 
@@ -42,13 +42,13 @@ cp apps/api/.env.example apps/api/.env
 npm run seed
 
 # 4. Chạy API (terminal 1)
-npm run dev:api     # http://localhost:4000 — health: http://localhost:4000/health
+npm run dev:api     # http://localhost:4005 — health: http://localhost:4005/health
 
 # 5. Chạy web (terminal 2)
 npm run dev:web     # http://localhost:5173
 ```
 
-Mở **http://localhost:5173** — frontend tự proxy `/api` và `/uploads` sang `localhost:4000`, không cần cấu hình thêm. Nếu chạy API ở host/port khác, tạo `apps/web/.env` với `VITE_API_BASE_URL=http://<host>:<port>/api`.
+Mở **http://localhost:5173** — frontend tự proxy `/api` và `/uploads` sang `localhost:4005`, không cần cấu hình thêm. Nếu chạy API ở host/port khác, tạo `apps/web/.env` với `VITE_API_BASE_URL=http://<host>:<port>/api`.
 
 > Chạy cả hai cùng lúc: `npm run dev` (chạy `dev` của mọi workspace song song).
 
@@ -77,7 +77,7 @@ Seed tạo sẵn các tài khoản sau — chỉ dùng cho môi trường dev, k
 
 - **`MongooseServerSelectionError` / connect ECONNREFUSED 27017** — MongoDB chưa chạy. Khởi động mongod/docker container, hoặc sửa `MONGODB_URI` trong `apps/api/.env` trỏ đúng instance.
 - **Trang chủ/ danh sách trống** — chưa seed: chạy `npm run seed` rồi reload.
-- **`EADDRINUSE: 4000` hoặc `5173`** — đổi `PORT` trong `apps/api/.env` (và `VITE_API_BASE_URL`/proxy tương ứng), hoặc `vite --port` khác.
+- **`EADDRINUSE: 4005` hoặc `5173`** — đổi `PORT` trong `apps/api/.env` (và `VITE_API_BASE_URL`/proxy tương ứng), hoặc `vite --port` khác.
 - **API lỗi CORS** — kiểm tra `CORS_ORIGIN` trong `apps/api/.env` trùng origin của web (mặc định `http://localhost:5173`). Dev thường không cần vì đi qua Vite proxy.
 
 ## API công khai
@@ -102,9 +102,6 @@ Sản phẩm `isActive: false` hoặc `isDeleted: true` không xuất hiện ở
 | `POST /api/auth/login` | public | Đăng nhập cho customer/employee/admin; tài khoản `blocked`/`inactive` bị từ chối |
 | `GET /api/auth/me` | đã đăng nhập | Hồ sơ hiện tại (không bao giờ trả `passwordHash`) |
 | `POST /api/auth/logout` | đã đăng nhập | Xác nhận phiên (JWT stateless — client tự xóa token) |
-| `GET /api/customer/rbac-smoke` | customer | Seam kiểm chứng RBAC (thay bằng route thật ở Epic 3) |
-| `GET /api/employee/rbac-smoke` | employee | Seam kiểm chứng RBAC (thay bằng route thật ở Epic 4) |
-| `GET /api/admin/rbac-smoke` | admin | Seam kiểm chứng RBAC (thay bằng route thật ở Epic 5) |
 
 ## API khách hàng (Epic 3)
 

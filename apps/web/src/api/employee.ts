@@ -5,27 +5,20 @@ import type {
   StaffOrderDetail,
   StaffOrderListItem,
 } from '../types/commerce';
-import { apiGet, apiRequest } from './client';
+import { staffOrdersApi, type StaffOrderQuery } from './staffOrders';
 
-export interface EmployeeOrderQuery {
-  status?: OrderStatus | '';
-  page?: number;
-  limit?: number;
-}
+const api = staffOrdersApi('employee');
 
-export async function fetchEmployeeOrders(
+export type EmployeeOrderQuery = StaffOrderQuery;
+
+export function fetchEmployeeOrders(
   query: EmployeeOrderQuery = {},
 ): Promise<{ items: StaffOrderListItem[]; meta: PageMeta }> {
-  const result = await apiGet<StaffOrderListItem[]>('/employee/orders', {
-    status: query.status || undefined,
-    page: query.page,
-    limit: query.limit ?? 10,
-  });
-  return { items: result.data, meta: result.meta as PageMeta };
+  return api.fetchOrders(query);
 }
 
 export function fetchEmployeeOrder(orderNo: string): Promise<{ data: StaffOrderDetail }> {
-  return apiGet<StaffOrderDetail>(`/employee/orders/${encodeURIComponent(orderNo)}`);
+  return api.fetchOrder(orderNo);
 }
 
 export function updateEmployeeOrderStatus(
@@ -33,9 +26,7 @@ export function updateEmployeeOrderStatus(
   status: OrderStatus,
   note?: string,
 ): Promise<{ data: StaffOrderDetail }> {
-  return apiRequest<StaffOrderDetail>('PATCH', `/employee/orders/${encodeURIComponent(orderNo)}/status`, {
-    body: { status, ...(note ? { note } : {}) },
-  });
+  return api.updateStatus(orderNo, status, note);
 }
 
 export function updateEmployeeOrderPayment(
@@ -43,9 +34,5 @@ export function updateEmployeeOrderPayment(
   paymentStatus: PaymentStatus,
   note?: string,
 ): Promise<{ data: StaffOrderDetail }> {
-  return apiRequest<StaffOrderDetail>(
-    'PATCH',
-    `/employee/orders/${encodeURIComponent(orderNo)}/payment`,
-    { body: { paymentStatus, ...(note ? { note } : {}) } },
-  );
+  return api.updatePayment(orderNo, paymentStatus, note);
 }

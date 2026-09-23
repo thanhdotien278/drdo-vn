@@ -81,3 +81,35 @@ export function apiGet<T>(
 ): Promise<{ data: T; meta?: unknown }> {
   return apiRequest<T>('GET', path, { params });
 }
+
+/**
+ * Multipart upload — the browser sets the Content-Type boundary itself.
+ */
+export async function apiUpload<T>(
+  method: 'POST' | 'PATCH',
+  path: string,
+  formData: FormData,
+): Promise<{ data: T }> {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+
+  if (!response.ok) {
+    throw new ApiRequestError(
+      response.status,
+      payload?.error?.message ?? 'Không thể kết nối tới máy chủ. Vui lòng thử lại.',
+      payload?.error?.code,
+    );
+  }
+  if (!payload) {
+    throw new ApiRequestError(response.status, 'Phản hồi từ máy chủ không hợp lệ.');
+  }
+  return { data: payload.data };
+}

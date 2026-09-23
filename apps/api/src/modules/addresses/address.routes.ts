@@ -40,7 +40,7 @@ addressRouter.delete(
   '/addresses/:id',
   asyncHandler(async (req, res) => {
     await deleteAddress(getAuthUser(req).id, req.params.id);
-    res.json({ ok: true });
+    res.json({ data: { ok: true } });
   }),
 );
 

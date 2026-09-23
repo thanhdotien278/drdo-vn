@@ -110,6 +110,11 @@ function AuthActions() {
           Quản lý đơn
         </Link>
       ) : null}
+      {user.roles.includes('admin') ? (
+        <Link className="site-header__auth-link" to="/admin">
+          Quản trị
+        </Link>
+      ) : null}
       <Link className="site-header__auth-link" to="/account" title={user.email}>
         {user.fullName}
       </Link>

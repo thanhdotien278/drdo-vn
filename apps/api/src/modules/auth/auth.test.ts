@@ -234,18 +234,18 @@ test('a blocked user holding a previously valid token gets 401 on protected APIs
   });
   const token = signAccessToken(String(user._id));
 
-  const ok = await api('GET', '/api/customer/rbac-smoke', { token });
+  const ok = await api('GET', '/api/cart', { token });
   assert.equal(ok.status, 200);
 
   await UserModel.updateOne({ _id: user._id }, { status: 'blocked' }).exec();
 
-  const denied = await api('GET', '/api/customer/rbac-smoke', { token });
+  const denied = await api('GET', '/api/cart', { token });
   assert.equal(denied.status, 401);
   assert.equal(errorCode(denied.body), 'ACCOUNT_BLOCKED');
 });
 
 test('anonymous protected requests return 401', async () => {
-  for (const path of ['/api/customer/rbac-smoke', '/api/employee/rbac-smoke', '/api/admin/rbac-smoke']) {
+  for (const path of ['/api/cart', '/api/employee/orders', '/api/admin/dashboard']) {
     const res = await api('GET', path);
     assert.equal(res.status, 401, `${path} should reject anonymous requests`);
   }
@@ -253,21 +253,21 @@ test('anonymous protected requests return 401', async () => {
 
 test('customer cannot access employee/admin APIs (403)', async () => {
   const token = await login('customer@test.dev');
-  assert.equal((await api('GET', '/api/customer/rbac-smoke', { token })).status, 200);
-  assert.equal((await api('GET', '/api/employee/rbac-smoke', { token })).status, 403);
-  assert.equal((await api('GET', '/api/admin/rbac-smoke', { token })).status, 403);
+  assert.equal((await api('GET', '/api/cart', { token })).status, 200);
+  assert.equal((await api('GET', '/api/employee/orders', { token })).status, 403);
+  assert.equal((await api('GET', '/api/admin/dashboard', { token })).status, 403);
 });
 
-test('employee can access operational seam but not admin APIs (403)', async () => {
+test('employee can access operational APIs but not admin APIs (403)', async () => {
   const token = await login('employee@test.dev');
-  assert.equal((await api('GET', '/api/employee/rbac-smoke', { token })).status, 200);
-  assert.equal((await api('GET', '/api/admin/rbac-smoke', { token })).status, 403);
-  assert.equal((await api('GET', '/api/customer/rbac-smoke', { token })).status, 403);
+  assert.equal((await api('GET', '/api/employee/orders', { token })).status, 200);
+  assert.equal((await api('GET', '/api/admin/dashboard', { token })).status, 403);
+  assert.equal((await api('GET', '/api/cart', { token })).status, 403);
 });
 
 test('admin can access admin APIs; roles are exact (no implicit employee)', async () => {
   const token = await login('admin@test.dev');
-  assert.equal((await api('GET', '/api/admin/rbac-smoke', { token })).status, 200);
-  assert.equal((await api('GET', '/api/employee/rbac-smoke', { token })).status, 403);
-  assert.equal((await api('GET', '/api/customer/rbac-smoke', { token })).status, 403);
+  assert.equal((await api('GET', '/api/admin/dashboard', { token })).status, 200);
+  assert.equal((await api('GET', '/api/employee/orders', { token })).status, 403);
+  assert.equal((await api('GET', '/api/cart', { token })).status, 403);
 });
