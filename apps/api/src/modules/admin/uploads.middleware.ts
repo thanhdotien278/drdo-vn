@@ -56,3 +56,5 @@ function wrapUpload(middleware: RequestHandler): RequestHandler {
 
 export const uploadProductImages = wrapUpload(upload.array('images', MAX_PRODUCT_IMAGES));
 export const uploadProductImage = wrapUpload(upload.single('image'));
+/** Story 7.5 — banner images share the product-image rules (type/size/naming). */
+export const uploadBannerImage = uploadProductImage;

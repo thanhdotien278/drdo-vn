@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ProductListItem } from '../types/catalog';
 import { formatRating, formatVnd } from '../utils/format';
+import { WishlistButton } from './WishlistButton';
 
 export function ProductCard({ product }: { product: ProductListItem }) {
   const image = product.images.find((item) => item.isPrimary) ?? product.images[0];
@@ -40,6 +41,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           {lowStock ? <p className="product-card__stock">Chỉ còn {product.availableStock} sản phẩm</p> : null}
         </div>
       </Link>
+      <WishlistButton productId={product.id} />
     </article>
   );
 }

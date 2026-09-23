@@ -1,6 +1,6 @@
 # DrDo.vn API Specification v1
 
-This is the MVP API contract for the surface implemented through Epic 5. Payment provider integration is Phase 2; the wishlist, review, banner, loyalty, promotion, and coupon APIs (PRD FR-07 to FR-09) are planned for Epics 7-9 and are **not implemented**, so they are intentionally absent here.
+This is the MVP API contract for the surface implemented through Epic 7. Payment provider integration is Phase 2; the loyalty, promotion, and coupon APIs (PRD FR-08/FR-09) are planned for Epics 8-9 and are **not implemented**, so they are intentionally absent here.
 
 ## Conventions
 
@@ -31,6 +31,13 @@ This is the MVP API contract for the surface implemented through Epic 5. Payment
 | `POST /orders`, `POST /orders/preview`, `GET /orders`, `GET /orders/:orderNo` | No | Own orders only | No | No |
 | `GET /employee/orders`, `GET /employee/orders/:orderNo` | No | No | Yes | No |
 | `PATCH /employee/orders/:orderNo/status`, `PATCH /employee/orders/:orderNo/payment` | No | No | Yes | No |
+| `GET /employee/reviews`, `PATCH /employee/reviews/:id/status`, `DELETE /employee/reviews/:id` | No | No | Yes | No |
+| `GET /wishlist`, `POST /wishlist/items`, `DELETE /wishlist/items/:productId`, `POST /wishlist/items/:productId/move-to-cart` | No | Own wishlist | No | No |
+| `GET /products/:productId/reviews` | Yes | Yes | Yes | Yes |
+| `POST /products/:productId/reviews`, `GET /products/:productId/reviews/me`, `PATCH /reviews/:id`, `DELETE /reviews/:id` | No | Own reviews | No | No |
+| `GET /banners` | Yes | Yes | Yes | Yes |
+| `GET /admin/reviews`, `PATCH /admin/reviews/:id/status`, `DELETE /admin/reviews/:id` | No | No | No | Yes |
+| `GET /admin/banners`, `POST /admin/banners`, `PATCH /admin/banners/:id`, `DELETE /admin/banners/:id` | No | No | No | Yes |
 | `GET /admin/dashboard`, `GET /admin/audit-logs` | No | No | No | Yes |
 | `GET /admin/products`, `GET /admin/products/:id`, `POST /admin/products`, `PATCH /admin/products/:id`, `DELETE /admin/products/:id` | No | No | No | Yes |
 | `POST /admin/products/:id/images`, `PATCH /admin/products/:id/images/:imageId`, `DELETE /admin/products/:id/images/:imageId` | No | No | No | Yes |
@@ -95,6 +102,46 @@ Customer role only; customers see their own orders and have no status/payment mu
 - `POST /orders/preview` - Server-computed totals for the checkout screen. No body; returns `{ data: { itemCount, totals } }` with the full seven-field block (coupon/points fields stay zero until Epics 8-9). Same `CART_EMPTY`/`PRODUCT_UNAVAILABLE`/`INSUFFICIENT_STOCK` errors as checkout.
 - `GET /orders` - List current customer's orders newest first. Query `page`, `limit`. Items are `{ id, orderNo, orderStatus, paymentStatus, paymentMethod, grandTotal, itemCount, createdAt }`.
 - `GET /orders/:orderNo` - Get current customer's order detail: `items[]`, `totals`, the immutable `shipping` snapshot, and the status `timeline[]`. `404` for foreign or unknown order numbers.
+
+## Wishlist
+
+Customer role only. Every customer has one persistent wishlist keyed by a unique `(userId, productId)` index — all routes are scoped to the caller and there is no way to address another customer's list. The wishlist stores **no** product snapshot: entries resolve live `name`, `image`, `price`, `salePrice`, `effectivePrice`, `availableStock`, `inStock`, `slug`/`sku` at read time. Products that become inactive or soft-deleted disappear from the response while the row is retained — they reappear automatically when reactivated.
+
+- `GET /wishlist` - List the caller's wishlist newest first: `{ data: WishlistItem[] }` where each item is `{ id, addedAt, product }` and `product` is the live shape above.
+- `POST /wishlist/items` - Add a product. Body `{ productId }`; re-adding is a safe no-op (upsert on insert only). Returns `{ data: WishlistItem[] }`. `404` for malformed ids; `400 PRODUCT_UNAVAILABLE` for unknown or deleted products.
+- `DELETE /wishlist/items/:productId` - Remove a product; returns `{ data: WishlistItem[] }`. `404` when the product is not in the caller's wishlist.
+- `POST /wishlist/items/:productId/move-to-cart` - Move an item to the Epic 3 cart via the shared `addCartItem` (qty 1, all stock/availability rules apply unchanged). On success the wishlist row is removed and `{ data: { wishlist, cart } }` is returned; on failure (`PRODUCT_UNAVAILABLE`, `INSUFFICIENT_STOCK`, …) the row is preserved and the domain error propagates. `404` when the product is not in the caller's wishlist.
+
+## Product Reviews
+
+Reviews carry `{ id, productId, rating (int 1-5), comment, status: pending | approved | rejected, authorName, createdAt, updatedAt }`. New reviews always start `pending` and are never publicly visible until staff approval. One review per customer per product is enforced by a unique `(userId, productId)` index (`409 REVIEW_EXISTS`). Eligibility is purchase-gated: the customer must own a non-`cancelled` order containing the product (`403 REVIEW_NOT_ELIGIBLE`); `delivered` is not required. `ratingAverage`/`ratingCount` on product list/detail are recomputed server-side from **approved** reviews only after every change to the approved set.
+
+- `GET /products/:productId/reviews` - Public list of **approved** reviews, newest first. Query `page`, `limit`. Returns `{ data: Review[], meta }`.
+- `POST /products/:productId/reviews` - Create the caller's review. Customer only. Body `{ rating: 1-5 int, comment? (max 2000) }`; returns `201 { data: review }` with `status=pending`. Errors: `403 REVIEW_NOT_ELIGIBLE`, `409 REVIEW_EXISTS`, `404` for unknown/inactive/deleted products.
+- `GET /products/:productId/reviews/me` - `{ data: { review: Review | null, eligible: boolean } }` — the caller's own review in any status plus current purchase eligibility. Customer only.
+- `PATCH /reviews/:id` - Edit the caller's own review. Body `{ rating?, comment? }`; a real content change returns the review to `pending` (re-moderation) and recomputes the product aggregate when it was approved. `404` for foreign or unknown ids — other customers' reviews are indistinguishable from missing ones.
+- `DELETE /reviews/:id` - Delete the caller's own review; recomputes the aggregate when it was approved. Returns `{ data: { ok: true } }`; `404` as above.
+
+## Staff Review Moderation
+
+The identical moderation handlers are mounted under `/employee/reviews` (employee role) and `/admin/reviews` (admin role) — same list, status transitions, delete semantics, and audit actions; only the actor role differs. Staff items add `customer { id, fullName, email }` and `product { id, name, slug }` to the public shape.
+
+- `GET /<area>/reviews` - Moderation queue, newest first. Query `page`, `limit`, `status` = `pending | approved | rejected | all` (default `pending`).
+- `PATCH /<area>/reviews/:id/status` - Approve or reject. Body `{ status: approved | rejected, reason? | note? }`; re-setting the current status is a no-op. Every real transition writes a `review.status_change` audit entry (`previousValue`/`nextValue` carry `status`) and recomputes the product's approved-only aggregate.
+- `DELETE /<area>/reviews/:id` - Permanently delete a review; writes a `review.delete` audit entry snapshotting the review and recomputes the aggregate when it was approved. Returns `{ data: { ok: true } }`.
+
+## Storefront Banners
+
+- `GET /banners` - Public feed of banners where `isActive`, not soft-deleted, and `now` is inside the `[startAt, endAt]` window (either bound may be omitted for open-ended). Sorted by `displayOrder` then creation order. Returns `{ data: [{ id, imageUrl, imageAlt, title, subtitle, linkUrl }] }` — no auth required.
+
+## Admin Banners
+
+Admin role only; employees and customers receive `403`. All mutations write `banner.create`/`banner.update`/`banner.status_change`/`banner.delete` audit entries; failed operations write none. Requests are `multipart/form-data`: text fields plus an optional file field `image` (≤5MB, JPEG/PNG/WebP/GIF, stored under `/uploads/banners`; the DB keeps URL metadata only).
+
+- `GET /admin/banners` - List banners by `displayOrder`. Query `page`, `limit`, `status` = `all | active | inactive | deleted` (default `all`; soft-deleted rows only appear under `status=deleted`). Items are the public shape plus `displayOrder`, `startAt`, `endAt`, `isActive`, `isDeleted`, `createdAt`.
+- `POST /admin/banners` - Create a banner. Fields `{ title?, subtitle?, imageAlt?, linkUrl?, displayOrder? (int ≥0), startAt?, endAt?, isActive? }` — dates are ISO 8601, empty means open-ended, `isActive` defaults to true; `image` is required. Returns `201 { data: banner }`. Errors: `400 INVALID_IMAGE_COUNT`, `400 UNSUPPORTED_FILE_TYPE`, `400 FILE_TOO_LARGE`, `400` when `startAt > endAt`.
+- `PATCH /admin/banners/:id` - Update any subset of the create fields; a new `image` file replaces the stored one and removes the old file. Returns `{ data: banner }`; `409 BANNER_DELETED` on soft-deleted rows.
+- `DELETE /admin/banners/:id` - Soft delete (sets `isDeleted` and `isActive=false`); returns `{ data: banner }`. `409 BANNER_DELETED` when already deleted.
 
 ## Employee Orders
 

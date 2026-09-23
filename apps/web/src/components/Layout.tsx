@@ -100,15 +100,23 @@ function AuthActions() {
           <Link className="site-header__auth-link" to="/orders">
             Đơn hàng
           </Link>
+          <Link className="site-header__auth-link" to="/wishlist">
+            Yêu thích
+          </Link>
           <Link className="site-header__auth-link" to="/addresses">
             Địa chỉ
           </Link>
         </>
       ) : null}
       {user.roles.includes('employee') ? (
-        <Link className="site-header__auth-link" to="/employee/orders">
-          Quản lý đơn
-        </Link>
+        <>
+          <Link className="site-header__auth-link" to="/employee/orders">
+            Quản lý đơn
+          </Link>
+          <Link className="site-header__auth-link" to="/employee/reviews">
+            Kiểm duyệt
+          </Link>
+        </>
       ) : null}
       {user.roles.includes('admin') ? (
         <Link className="site-header__auth-link" to="/admin">

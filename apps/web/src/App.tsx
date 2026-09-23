@@ -8,14 +8,17 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminOrderDetailPage } from './pages/admin/AdminOrderDetailPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
+import { AdminBannersPage } from './pages/admin/AdminBannersPage';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
+import { AdminReviewsPage } from './pages/admin/AdminReviewsPage';
 import { AdminStaffPage } from './pages/admin/AdminStaffPage';
 import { AdminTaxonomyPage } from './pages/admin/AdminTaxonomyPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { EmployeeOrderDetailPage } from './pages/EmployeeOrderDetailPage';
 import { EmployeeOrdersPage } from './pages/EmployeeOrdersPage';
+import { EmployeeReviewsPage } from './pages/EmployeeReviewsPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -25,6 +28,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ProductListPage } from './pages/ProductListPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { WishlistPage } from './pages/WishlistPage';
 
 export function App() {
   return (
@@ -85,7 +89,15 @@ export function App() {
           path="wishlist"
           element={
             <RequireRole roles={['customer']}>
-              <PlaceholderPage title="Yêu thích" />
+              <WishlistPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="employee/reviews"
+          element={
+            <RequireRole roles={['employee']}>
+              <EmployeeReviewsPage />
             </RequireRole>
           }
         />
@@ -121,6 +133,8 @@ export function App() {
           <Route path="brands" element={<AdminTaxonomyPage kind="brand" />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="orders/:orderNo" element={<AdminOrderDetailPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="banners" element={<AdminBannersPage />} />
           <Route path="customers" element={<AdminCustomersPage />} />
           <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
           <Route path="staff" element={<AdminStaffPage />} />

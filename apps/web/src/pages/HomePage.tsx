@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchCategories, fetchFeaturedProducts } from '../api/catalog';
+import { BannerStrip } from '../components/BannerStrip';
 import { ProductGrid } from '../components/ProductCard';
 import { LoadingGrid, StateBlock } from '../components/StateBlock';
 import { useAsync } from '../hooks/useAsync';
@@ -216,6 +217,8 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      <BannerStrip />
 
       <section className="section section--ivory" id="featured">
         <div className="container">

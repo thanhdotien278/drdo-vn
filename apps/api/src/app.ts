@@ -6,10 +6,14 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { addressRouter } from './modules/addresses/address.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { adminBannerRouter, publicBannerRouter } from './modules/banners/banner.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { orderRouter } from './modules/orders/order.routes.js';
 import { createStaffOrderRouter } from './modules/orders/orderManagement.routes.js';
+import { reviewRouter } from './modules/reviews/review.routes.js';
+import { createStaffReviewRouter } from './modules/reviews/reviewModeration.routes.js';
+import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
 import { UPLOADS_ROOT } from './utils/uploads.js';
 
 export function createApp(): Express {
@@ -32,10 +36,20 @@ export function createApp(): Express {
   app.use('/api', cartRouter);
   app.use('/api', addressRouter);
   app.use('/api', orderRouter);
+  // Epic 7 — customer engagement: wishlist, reviews (public list + customer
+  // writes), and the public banner feed.
+  app.use('/api', wishlistRouter);
+  app.use('/api', reviewRouter);
+  app.use('/api', publicBannerRouter);
   app.use('/api/employee', createStaffOrderRouter('employee'));
+  // Story 7.4 — the identical moderation workflow mounted for both staff
+  // roles; the shared service keeps approve/reject/delete single-sourced.
+  app.use('/api/employee', createStaffReviewRouter('employee'));
+  app.use('/api/admin', createStaffReviewRouter('admin'));
   // Story 5.6 — the identical order workflow mounted for admins; the shared
   // Epic 4 service keeps transition/payment rules single-sourced.
   app.use('/api/admin', createStaffOrderRouter('admin'));
+  app.use('/api/admin', adminBannerRouter);
   app.use('/api/admin', adminRouter);
 
   app.use(notFoundHandler);

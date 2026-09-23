@@ -7,6 +7,8 @@ const NAV_ITEMS = [
   { to: '/admin/brands', label: 'Thương hiệu' },
   { to: '/admin/orders', label: 'Đơn hàng' },
   { to: '/admin/customers', label: 'Khách hàng' },
+  { to: '/admin/reviews', label: 'Đánh giá' },
+  { to: '/admin/banners', label: 'Banner' },
   { to: '/admin/staff', label: 'Nhân sự' },
 ];
 

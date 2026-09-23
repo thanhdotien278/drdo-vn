@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { CartProvider } from './cart/CartContext';
+import { WishlistProvider } from './wishlist/WishlistContext';
 import './styles/global.css';
 
 const container = document.getElementById('root');
@@ -16,7 +17,9 @@ createRoot(container).render(
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <App />
+          <WishlistProvider>
+            <App />
+          </WishlistProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

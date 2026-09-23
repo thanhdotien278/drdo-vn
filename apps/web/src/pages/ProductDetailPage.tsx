@@ -6,7 +6,9 @@ import { ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
 import { ProductGrid } from '../components/ProductCard';
+import { ProductReviews } from '../components/ProductReviews';
 import { StateBlock } from '../components/StateBlock';
+import { WishlistButton } from '../components/WishlistButton';
 import { useAsync } from '../hooks/useAsync';
 import type { ProductDetail, ProductListItem } from '../types/catalog';
 import { formatRating, formatVnd } from '../utils/format';
@@ -197,6 +199,7 @@ export function ProductDetailPage() {
             >
               {!data.inStock ? 'Hết hàng' : adding ? 'Đang thêm…' : 'Thêm vào giỏ hàng'}
             </button>
+            <WishlistButton productId={data.id} />
           </div>
           {cartMessage ? (
             <p className={cartMessage.kind === 'error' ? 'error-text' : 'muted'} role="status">
@@ -234,6 +237,8 @@ export function ProductDetailPage() {
           <p>{data.usageInstructions}</p>
         </DetailBlock>
       ) : null}
+
+      <ProductReviews productId={data.id} />
 
       {related.data && related.data.length > 0 ? (
         <DetailBlock title="Sản phẩm liên quan">
