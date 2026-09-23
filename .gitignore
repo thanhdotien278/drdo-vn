@@ -5,3 +5,5 @@ dist/
 apps/api/uploads/
 *.log
 .DS_Store
+.playwright-mcp/
+_bmad/
