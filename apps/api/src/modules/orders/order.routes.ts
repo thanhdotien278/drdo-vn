@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/requireAuth.js';
+import { getAuthUser, requireAuth } from '../../middleware/requireAuth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { checkout, getOrderDetail, listOrders, previewOrder } from './order.service.js';
@@ -16,21 +16,21 @@ orderRouter.use('/orders', requireAuth, requireRole('customer'));
 orderRouter.post(
   '/orders',
   asyncHandler(async (req, res) => {
-    res.status(201).json({ data: await checkout(req.authUser!, req.body) });
+    res.status(201).json({ data: await checkout(getAuthUser(req), req.body) });
   }),
 );
 
 orderRouter.post(
   '/orders/preview',
   asyncHandler(async (req, res) => {
-    res.json({ data: await previewOrder(req.authUser!) });
+    res.json({ data: await previewOrder(getAuthUser(req)) });
   }),
 );
 
 orderRouter.get(
   '/orders',
   asyncHandler(async (req, res) => {
-    const { items, meta } = await listOrders(req.authUser!.id, req.query);
+    const { items, meta } = await listOrders(getAuthUser(req).id, req.query);
     res.json({ data: items, meta });
   }),
 );
@@ -38,6 +38,6 @@ orderRouter.get(
 orderRouter.get(
   '/orders/:orderNo',
   asyncHandler(async (req, res) => {
-    res.json({ data: await getOrderDetail(req.authUser!.id, req.params.orderNo) });
+    res.json({ data: await getOrderDetail(getAuthUser(req).id, req.params.orderNo) });
   }),
 );

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/requireAuth.js';
+import { getAuthUser, requireAuth } from '../../middleware/requireAuth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { addCartItem, getCart, removeCartItem, updateCartItem } from './cart.service.js';
@@ -15,27 +15,27 @@ cartRouter.use('/cart', requireAuth, requireRole('customer'));
 cartRouter.get(
   '/cart',
   asyncHandler(async (req, res) => {
-    res.json({ data: await getCart(req.authUser!.id) });
+    res.json({ data: await getCart(getAuthUser(req).id) });
   }),
 );
 
 cartRouter.post(
   '/cart/items',
   asyncHandler(async (req, res) => {
-    res.status(201).json({ data: await addCartItem(req.authUser!.id, req.body) });
+    res.status(201).json({ data: await addCartItem(getAuthUser(req).id, req.body) });
   }),
 );
 
 cartRouter.patch(
   '/cart/items/:id',
   asyncHandler(async (req, res) => {
-    res.json({ data: await updateCartItem(req.authUser!.id, req.params.id, req.body) });
+    res.json({ data: await updateCartItem(getAuthUser(req).id, req.params.id, req.body) });
   }),
 );
 
 cartRouter.delete(
   '/cart/items/:id',
   asyncHandler(async (req, res) => {
-    res.json({ data: await removeCartItem(req.authUser!.id, req.params.id) });
+    res.json({ data: await removeCartItem(getAuthUser(req).id, req.params.id) });
   }),
 );

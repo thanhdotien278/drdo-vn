@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { requireAuth } from '../../middleware/requireAuth.js';
+import { Router, type Request } from 'express';
+import { getAuthUser, requireAuth } from '../../middleware/requireAuth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import {
@@ -18,11 +18,10 @@ export function createStaffOrderRouter(role: 'employee' | 'admin'): Router {
   const router = Router();
   router.use(requireAuth, requireRole(role));
 
-  const actor = (req: { authUser?: { id: string; fullName: string } }) => ({
-    userId: req.authUser!.id,
-    role,
-    label: req.authUser!.fullName,
-  });
+  const actor = (req: Request) => {
+    const user = getAuthUser(req);
+    return { userId: user.id, role, label: user.fullName };
+  };
 
   router.get(
     '/orders',

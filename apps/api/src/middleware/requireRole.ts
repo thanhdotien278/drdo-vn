@@ -14,11 +14,12 @@ export function requireAnyRole(...allowedRoles: UserRole[]): RequestHandler {
   }
 
   return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.authUser) {
+    const user = req.authUser;
+    if (!user) {
       next(ApiError.unauthorized());
       return;
     }
-    if (!allowedRoles.some((role) => req.authUser!.roles.includes(role))) {
+    if (!allowedRoles.some((role) => user.roles.includes(role))) {
       next(ApiError.forbidden());
       return;
     }
