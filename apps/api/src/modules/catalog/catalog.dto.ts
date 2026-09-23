@@ -50,7 +50,7 @@ export interface ProductDetailDto extends ProductListItemDto {
 }
 
 function isPopulated<T>(value: unknown): value is T {
-  return typeof value === 'object' && value !== null && '_id' in (value as Record<string, unknown>) && 'name' in (value as Record<string, unknown>);
+  return typeof value === 'object' && value !== null && '_id' in value && 'name' in value;
 }
 
 export function toCategoryDto(category: CategoryDocument): CategoryDto {
