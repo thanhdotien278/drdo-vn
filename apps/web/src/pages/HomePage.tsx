@@ -127,10 +127,16 @@ const COMMITMENTS = [
   { icon: <HeartIcon />, title: 'Vì cộng đồng', text: 'và môi trường xanh hơn' },
 ];
 
+const MAX_STARS = 5;
+
 function Stars({ value }: { value: number }) {
+  const filled = Math.min(MAX_STARS, Math.max(0, Math.round(value)));
   return (
     <span className="stars" aria-label={`${formatRating(value)} trên 5 sao`}>
-      <span aria-hidden="true">★★★★★</span>
+      <span aria-hidden="true">
+        {'★'.repeat(filled)}
+        {'☆'.repeat(MAX_STARS - filled)}
+      </span>
     </span>
   );
 }
