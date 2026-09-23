@@ -1,5 +1,5 @@
 import type { CartItemDocument } from '../../models/CartItem.js';
-import type { ProductDocument } from '../../models/Product.js';
+import { productDerived, type ProductDocument } from '../../models/Product.js';
 
 export interface CartItemProductDto {
   id: string;
@@ -51,9 +51,7 @@ export function toCartItemDto(
           imageAlt:
             (product.images.find((image) => image.isPrimary) ?? product.images[0])?.alt ??
             product.name,
-          effectivePrice: product.effectivePrice ?? product.price,
-          availableStock: Math.max(0, product.stockOnHand - product.stockReserved),
-          inStock: product.stockOnHand - product.stockReserved > 0,
+          ...productDerived(product),
           purchasable: product.isActive && !product.isDeleted,
         }
       : null,
