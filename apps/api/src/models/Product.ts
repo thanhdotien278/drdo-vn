@@ -54,3 +54,25 @@ productSchema.index({ soldCount: -1 });
 export type Product = InferSchemaType<typeof productSchema>;
 export type ProductDocument = HydratedDocument<Product>;
 export const ProductModel = model('Product', productSchema);
+
+export interface ProductDerived {
+  effectivePrice: number;
+  availableStock: number;
+  inStock: boolean;
+}
+
+/**
+ * Reads the persisted derived fields maintained by `syncDerivedFields` and
+ * `inventory.ts`, falling back to the base fields for documents that predate them.
+ */
+export function productDerived(
+  product: Pick<Product, 'price' | 'effectivePrice' | 'availableStock' | 'stockOnHand' | 'stockReserved'>,
+): ProductDerived {
+  const availableStock =
+    product.availableStock ?? Math.max(0, product.stockOnHand - product.stockReserved);
+  return {
+    effectivePrice: product.effectivePrice ?? product.price,
+    availableStock,
+    inStock: availableStock > 0,
+  };
+}
