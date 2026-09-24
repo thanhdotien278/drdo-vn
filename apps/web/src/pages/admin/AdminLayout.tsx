@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { to: '/admin/orders', label: 'Đơn hàng' },
   { to: '/admin/customers', label: 'Khách hàng' },
   { to: '/admin/loyalty', label: 'Hạng thành viên' },
+  { to: '/admin/promotions', label: 'Khuyến mãi' },
+  { to: '/admin/coupons', label: 'Mã giảm giá' },
   { to: '/admin/reviews', label: 'Đánh giá' },
   { to: '/admin/banners', label: 'Banner' },
   { to: '/admin/staff', label: 'Nhân sự' },

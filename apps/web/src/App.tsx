@@ -10,7 +10,9 @@ import { AdminLoyaltyTiersPage } from './pages/admin/AdminLoyaltyTiersPage';
 import { AdminOrderDetailPage } from './pages/admin/AdminOrderDetailPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminBannersPage } from './pages/admin/AdminBannersPage';
+import { AdminCouponsPage } from './pages/admin/AdminCouponsPage';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
+import { AdminPromotionsPage } from './pages/admin/AdminPromotionsPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminReviewsPage } from './pages/admin/AdminReviewsPage';
 import { AdminStaffPage } from './pages/admin/AdminStaffPage';
@@ -141,6 +143,8 @@ export function App() {
           <Route path="customers" element={<AdminCustomersPage />} />
           <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
           <Route path="loyalty" element={<AdminLoyaltyTiersPage />} />
+          <Route path="promotions" element={<AdminPromotionsPage />} />
+          <Route path="coupons" element={<AdminCouponsPage />} />
           <Route path="staff" element={<AdminStaffPage />} />
         </Route>
         <Route path="login" element={<LoginPage />} />

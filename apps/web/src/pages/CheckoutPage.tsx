@@ -39,6 +39,13 @@ export function CheckoutPage() {
   const [pointsError, setPointsError] = useState<string | null>(null);
   const [applyingPoints, setApplyingPoints] = useState(false);
 
+  // Epic 9 — coupon. `appliedCoupon` is the last server-validated code; the
+  // totals' `couponRef` snapshot is the source of truth after each preview.
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('saved');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [shipping, setShipping] = useState(EMPTY_SHIPPING);
@@ -70,7 +77,10 @@ export function CheckoutPage() {
     setPointsError(null);
     setApplyingPoints(true);
     try {
-      const { data } = await previewOrder(points);
+      const { data } = await previewOrder({
+        pointsToRedeem: points,
+        couponCode: appliedCoupon ?? undefined,
+      });
       setPreviewOverride(data);
       setAppliedPoints(data.loyalty.pointsToRedeem);
     } catch (err) {
@@ -80,6 +90,36 @@ export function CheckoutPage() {
     } finally {
       setApplyingPoints(false);
     }
+  }
+
+  async function applyCoupon(code: string): Promise<boolean> {
+    setCouponError(null);
+    setApplyingCoupon(true);
+    try {
+      const { data } = await previewOrder({
+        pointsToRedeem: appliedPoints,
+        couponCode: code || undefined,
+      });
+      setPreviewOverride(data);
+      setAppliedCoupon(data.totals.couponRef?.code ?? null);
+      return true;
+    } catch (err) {
+      setCouponError(
+        err instanceof ApiRequestError ? err.message : 'Không áp dụng được mã. Vui lòng thử lại.',
+      );
+      return false;
+    } finally {
+      setApplyingCoupon(false);
+    }
+  }
+
+  function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError('Vui lòng nhập mã giảm giá');
+      return;
+    }
+    void applyCoupon(code);
   }
 
   function handleApplyPoints() {
@@ -99,6 +139,9 @@ export function CheckoutPage() {
     const typed = pointsInput.trim() === '' ? null : Number(pointsInput.trim());
     const submittedPoints =
       typed !== null && Number.isInteger(typed) && typed >= 0 ? typed : appliedPoints;
+    // Same dirty-input rule as points: a typed-but-unapplied code is sent and
+    // strictly validated by the server rather than silently dropped.
+    const submittedCoupon = couponInput.trim() !== '' ? couponInput.trim() : appliedCoupon;
     setSubmitting(true);
     try {
       const { data: order } = await createOrder({
@@ -106,6 +149,7 @@ export function CheckoutPage() {
         contactEmail: contactEmail.trim() || undefined,
         notesCustomer: notes.trim() || undefined,
         pointsToRedeem: submittedPoints > 0 ? submittedPoints : undefined,
+        couponCode: submittedCoupon ?? undefined,
         ...(effectiveMode === 'saved' && effectiveAddressId
           ? { addressId: effectiveAddressId }
           : { shipping }),
@@ -116,9 +160,27 @@ export function CheckoutPage() {
       setError(err instanceof ApiRequestError ? err.message : 'Không đặt được đơn hàng. Vui lòng thử lại.');
       await refresh();
       // Re-run the preview so totals/loyalty reflect the post-failure state.
-      if (submittedPoints > 0) {
-        await applyPoints(submittedPoints);
+      if (submittedPoints > 0 || submittedCoupon) {
+        const { data } = await previewOrder({
+          pointsToRedeem: submittedPoints,
+          couponCode: submittedCoupon ?? undefined,
+        }).catch(() => ({ data: null }));
+        if (data) {
+          setPreviewOverride(data);
+          setAppliedCoupon(data.totals.couponRef?.code ?? null);
+          setAppliedPoints(data.loyalty.pointsToRedeem);
+        } else {
+          // The re-preview failed too — fall back to the reloaded base
+          // preview so no stale override or ghost apply state remains.
+          setPreviewOverride(null);
+          setAppliedCoupon(null);
+          setAppliedPoints(0);
+          preview.reload();
+        }
       } else {
+        setPreviewOverride(null);
+        setAppliedCoupon(null);
+        setAppliedPoints(0);
         preview.reload();
       }
     } finally {
@@ -328,6 +390,53 @@ export function CheckoutPage() {
             </p>
           </section>
 
+          <section className="checkout-panel" aria-labelledby="coupon-heading">
+            <h2 id="coupon-heading">Mã giảm giá</h2>
+            <div className="form-field">
+              <label htmlFor="coupon-code">Nhập mã giảm giá</label>
+              <input
+                id="coupon-code"
+                value={couponInput}
+                maxLength={50}
+                placeholder="Ví dụ: DRDO10"
+                onChange={(event) => setCouponInput(event.target.value)}
+              />
+            </div>
+            <div className="admin-form__actions">
+              <button
+                type="button"
+                className="button button--outline"
+                disabled={applyingCoupon || applyingPoints}
+                onClick={handleApplyCoupon}
+              >
+                {applyingCoupon ? 'Đang áp dụng…' : 'Áp dụng mã'}
+              </button>
+              {appliedCoupon ? (
+                <button
+                  type="button"
+                  className="link-button"
+                  disabled={applyingCoupon || applyingPoints}
+                  onClick={() => {
+                    // Clear the input only once the removal preview
+                    // succeeded — a failed removal must not leave a ghost
+                    // coupon that resubmits.
+                    void applyCoupon('').then((ok) => {
+                      if (ok) setCouponInput('');
+                    });
+                  }}
+                >
+                  Gỡ mã
+                </button>
+              ) : null}
+            </div>
+            {couponError ? (
+              <p className="error-text" role="alert">
+                {couponError}
+              </p>
+            ) : null}
+            {appliedCoupon ? <p className="muted">Đang dùng mã {appliedCoupon}.</p> : null}
+          </section>
+
           <section className="checkout-panel" aria-labelledby="loyalty-heading">
             <h2 id="loyalty-heading">Điểm thưởng</h2>
             {loyalty ? (
@@ -354,7 +463,9 @@ export function CheckoutPage() {
                   <button
                     type="button"
                     className="button button--outline"
-                    disabled={applyingPoints || loyalty.maxRedeemablePoints === 0}
+                    disabled={
+                      applyingPoints || applyingCoupon || loyalty.maxRedeemablePoints === 0
+                    }
                     onClick={handleApplyPoints}
                   >
                     {applyingPoints ? 'Đang áp dụng…' : 'Áp dụng điểm'}
@@ -363,7 +474,7 @@ export function CheckoutPage() {
                     <button
                       type="button"
                       className="link-button"
-                      disabled={applyingPoints}
+                      disabled={applyingPoints || applyingCoupon}
                       onClick={() => {
                         setPointsInput('');
                         void applyPoints(0);
@@ -406,6 +517,15 @@ export function CheckoutPage() {
                 <dt>Tạm tính</dt>
                 <dd>{formatVnd(totals.subtotal)}</dd>
               </div>
+              {totals.discountAmount > 0 ? (
+                <div className="summary-row">
+                  <dt>
+                    Giảm giá
+                    {totals.couponRef ? ` (${totals.couponRef.code})` : ''}
+                  </dt>
+                  <dd>-{formatVnd(totals.discountAmount)}</dd>
+                </div>
+              ) : null}
               {totals.pointsDiscountAmount > 0 ? (
                 <div className="summary-row">
                   <dt>Điểm thưởng ({totals.pointsRedeemed.toLocaleString('vi-VN')} điểm)</dt>
@@ -437,7 +557,7 @@ export function CheckoutPage() {
           <button
             type="submit"
             className="button button--primary button--lg button--full"
-            disabled={submitting}
+            disabled={submitting || applyingCoupon || applyingPoints}
           >
             {submitting ? 'Đang đặt hàng…' : 'Đặt hàng'}
           </button>

@@ -14,6 +14,7 @@ import { buildPageMeta, paginationQuerySchema, skipForPage } from '../../utils/p
 import { parseInput } from '../../utils/validate.js';
 import { recordAudit, type AuditActorInput } from '../audit/audit.service.js';
 import { accrueForOrder } from '../loyalty/loyalty.service.js';
+import { releaseCouponRedemption } from '../promotions/promotion.service.js';
 import { consumeOrderReservation, releaseOrderReservation } from './inventory.js';
 import { countItemsByOrder } from './orderItemCounts.js';
 import {
@@ -148,6 +149,9 @@ export async function transitionOrderStatus(
     await accrueForOrder(order, actor);
   } else if (toStatus === 'cancelled') {
     await releaseOrderReservation(order._id);
+    // Epic 9 — pre-shipment cancel frees the coupon usage limits via the
+    // claim-before-work `applied → released` flip; no coupon is a no-op.
+    await releaseCouponRedemption(order._id);
   }
 
   await OrderStatusEventModel.create({

@@ -1,6 +1,6 @@
 # DrDo.vn API Specification v1
 
-This is the MVP API contract for the surface implemented through Epic 7. Payment provider integration is Phase 2; the loyalty, promotion, and coupon APIs (PRD FR-08/FR-09) are planned for Epics 8-9 and are **not implemented**, so they are intentionally absent here.
+This is the MVP API contract. Payment provider integration is Phase 2 and intentionally absent here.
 
 ## Conventions
 
@@ -47,6 +47,8 @@ This is the MVP API contract for the surface implemented through Epic 7. Payment
 | `PATCH /admin/orders/:orderNo/status`, `PATCH /admin/orders/:orderNo/payment` | No | No | No | Yes |
 | `GET /admin/customers`, `GET /admin/customers/:id`, `PATCH /admin/customers/:id/status` | No | No | No | Yes |
 | `GET /admin/staff`, `POST /admin/staff`, `PATCH /admin/staff/:id/role`, `PATCH /admin/staff/:id/status` | No | No | No | Yes |
+| `GET /admin/promotions`, `POST /admin/promotions`, `PATCH /admin/promotions/:id`, `DELETE /admin/promotions/:id` | No | No | No | Yes |
+| `GET /admin/coupons`, `POST /admin/coupons`, `PATCH /admin/coupons/:id`, `DELETE /admin/coupons/:id`, `GET /admin/coupons/:id/redemptions` | No | No | No | Yes |
 | `GET /uploads/**` | Yes | Yes | Yes | Yes |
 
 Notes on this matrix:
@@ -98,8 +100,10 @@ Customer role only; addresses have no postal code. Body for create/update is `{ 
 
 Customer role only; customers see their own orders and have no status/payment mutation route.
 
-- `POST /orders` - Create order from the current cart. Body `{ paymentMethod, addressId?, shipping?, contactEmail?, notesCustomer? }`: either `addressId` (a saved address owned by the caller) or an inline `shipping` object `{ fullName, phone, line1, line2?, ward, district, province }` is required. New orders are always `paymentStatus=unpaid`, `orderStatus=pending`; stock is **reserved** (not deducted) and the cart clears only after the order exists. Returns `201 { data: OrderDetail }`. Errors: `400 CART_EMPTY`, `400 SHIPPING_REQUIRED`, `400 PRODUCT_UNAVAILABLE`, `400 INSUFFICIENT_STOCK`, `404` for an `addressId` the caller does not own.
-- `POST /orders/preview` - Server-computed totals for the checkout screen. No body; returns `{ data: { itemCount, totals } }` with the full seven-field block (coupon/points fields stay zero until Epics 8-9). Same `CART_EMPTY`/`PRODUCT_UNAVAILABLE`/`INSUFFICIENT_STOCK` errors as checkout.
+- `POST /orders` - Create order from the current cart. Body `{ paymentMethod, addressId?, shipping?, contactEmail?, notesCustomer?, pointsToRedeem?, couponCode? }`: either `addressId` (a saved address owned by the caller) or an inline `shipping` object `{ fullName, phone, line1, line2?, ward, district, province }` is required. `couponCode` (trimmed, ≤50 chars, case-insensitive) resolves through the QA §14.5 validation ladder before stock is reserved; on success the order embeds the immutable `couponRef` snapshot (`couponId`, `promotionId`, `code`, `discountType`, `discountValue`, `maxDiscountAmount`) and one `applied` `CouponRedemption` row ties the coupon to the order. New orders are always `paymentStatus=unpaid`, `orderStatus=pending`; stock is **reserved** (not deducted) and the cart clears only after the order exists. Returns `201 { data: OrderDetail }`. Errors: `400 CART_EMPTY`, `400 SHIPPING_REQUIRED`, `400 PRODUCT_UNAVAILABLE`, `400 INSUFFICIENT_STOCK`, the coupon codes below, `404` for an `addressId` the caller does not own.
+- `POST /orders/preview` - Server-computed totals for the checkout screen. Body `{ pointsToRedeem?, couponCode? }` (both optional); returns `{ data: { itemCount, totals, loyalty } }` with the full seven-field block. The same coupon validation as checkout applies, so the preview never disagrees with the resulting order. Same `CART_EMPTY`/`PRODUCT_UNAVAILABLE`/`INSUFFICIENT_STOCK` and coupon errors as checkout.
+
+Coupon rejection codes (all `400`, checked in this order — QA §14.5): `COUPON_NOT_FOUND` (unknown or soft-deleted) → `COUPON_INACTIVE` (coupon or its promotion disabled/deleted — indistinguishable) → `COUPON_NOT_STARTED` → `COUPON_EXPIRED` → `COUPON_TIER_INELIGIBLE` → `COUPON_MIN_ORDER_NOT_MET` (vs cart subtotal; error payload carries `details: { minOrderTotal }`) → `COUPON_NOT_APPLICABLE` (scoped base = 0) → `COUPON_USAGE_LIMIT_REACHED` → `COUPON_CUSTOMER_LIMIT_REACHED`. Discount math: `percentage` → `floor(base × value/100)`; `fixed_amount` → `value`; then `min(discount, maxDiscountAmount ?? ∞, base)` where `base` is the sum of scope-matching lines (empty scope = whole subtotal). Usage limits count `applied` redemptions only; a pre-shipment cancellation flips the redemption to `released` and frees the limits. One coupon per order (unique `orderId` on redemptions); no stacking, no auto-apply.
 - `GET /orders` - List current customer's orders newest first. Query `page`, `limit`. Items are `{ id, orderNo, orderStatus, paymentStatus, paymentMethod, grandTotal, itemCount, createdAt }`.
 - `GET /orders/:orderNo` - Get current customer's order detail: `items[]`, `totals`, the immutable `shipping` snapshot, and the status `timeline[]`. `404` for foreign or unknown order numbers.
 
@@ -200,3 +204,17 @@ Admin role only.
 - `POST /admin/staff` - Create a staff member. Body `{ email, password (8-128 chars), fullName, phone?, role: admin | employee }`; returns `201 { data: staff }`. `409 EMAIL_TAKEN`.
 - `PATCH /admin/staff/:id/role` - Set staff role. Body `{ role: admin | employee, note? }`; no-op when unchanged, otherwise writes a `staff.role_change` audit log. `409 CANNOT_CHANGE_OWN_ROLE`.
 - `PATCH /admin/staff/:id/status` - Activate or deactivate staff. Body `{ status: active | inactive, note? }`; writes a `staff.status_change` audit log. `409 CANNOT_DEACTIVATE_SELF` — an admin cannot deactivate their own account.
+
+## Admin Promotions And Coupons
+
+Admin role only; employees and customers receive `403`. All mutations write `promotion.create`/`promotion.update`/`promotion.status_change`/`promotion.delete` and `coupon.*` audit entries; failed operations write none. All deletes are soft deletes.
+
+- `GET /admin/promotions` - List promotions newest first. Query `page`, `limit`, `status` = `all | active | inactive | deleted` (default `all`; soft-deleted rows only under `status=deleted`). Items: `{ id, name, discountType, discountValue, maxDiscountAmount, startAt, endAt, minOrderTotal, productIds[], categoryIds[], brandIds[], tierCodes[], isActive, isDeleted, createdAt }`.
+- `POST /admin/promotions` - Create a promotion. Body `{ name, discountType: percentage | fixed_amount, discountValue, maxDiscountAmount?, startAt?, endAt?, minOrderTotal?, productIds?[], categoryIds?[], brandIds?[], tierCodes?[], isActive? }` — dates ISO 8601, empty/null means open-ended; `tierCodes` empty means all tiers; scope arrays empty means the discount base is the whole subtotal. `201`; `400` when `startAt > endAt`.
+- `PATCH /admin/promotions/:id` - Update any subset of the create fields. `409 PROMOTION_DELETED` on soft-deleted rows.
+- `DELETE /admin/promotions/:id` - Soft delete (`isDeleted`, `isActive=false`); its coupons immediately fail customer validation as `COUPON_INACTIVE`. `409 PROMOTION_DELETED` when already deleted.
+- `GET /admin/coupons` - List coupons newest first. Query `page`, `limit`, `status` (as promotions), `promotionId`. Items add `promotionName` and `usageCount` (count of `applied` redemptions).
+- `POST /admin/coupons` - Create a coupon. Body `{ code (≤50, normalized uppercase), promotionId, usageLimitTotal?, usageLimitPerCustomer?, isActive? }` — `null` limits mean unlimited. `201`; `400 INVALID_PROMOTION` for a missing/deleted promotion; `409 COUPON_CODE_TAKEN` when the code exists in any case.
+- `PATCH /admin/coupons/:id` - Update any subset of the create fields; `code` changes re-check uniqueness. `409 COUPON_DELETED`, `409 COUPON_CODE_TAKEN`.
+- `DELETE /admin/coupons/:id` - Soft delete and release the code with a `--del-<ts>` suffix so it can be recreated; historical orders still resolve via `totals.couponRef`. `409 COUPON_DELETED` when already deleted.
+- `GET /admin/coupons/:id/redemptions` - Paginated redemption history for the coupon, newest first: `{ id, couponId, promotionId, orderId, orderNo, userId, code, discountAmount, status: applied | released, releasedAt, createdAt }`.

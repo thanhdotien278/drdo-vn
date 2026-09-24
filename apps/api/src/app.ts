@@ -13,6 +13,7 @@ import { loyaltyAdminRouter } from './modules/loyalty/loyaltyAdmin.routes.js';
 import { loyaltyRouter } from './modules/loyalty/loyalty.routes.js';
 import { orderRouter } from './modules/orders/order.routes.js';
 import { createStaffOrderRouter } from './modules/orders/orderManagement.routes.js';
+import { promotionAdminRouter } from './modules/promotions/promotionAdmin.routes.js';
 import { reviewRouter } from './modules/reviews/review.routes.js';
 import { createStaffReviewRouter } from './modules/reviews/reviewModeration.routes.js';
 import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
@@ -56,6 +57,8 @@ export function createApp(): Express {
   app.use('/api/admin', adminBannerRouter);
   // Epic 8 — admin tier config and manual point adjustments.
   app.use('/api/admin', loyaltyAdminRouter);
+  // Epic 9 — admin promotion/coupon management.
+  app.use('/api/admin', promotionAdminRouter);
   app.use('/api/admin', adminRouter);
 
   app.use(notFoundHandler);

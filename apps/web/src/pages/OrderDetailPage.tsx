@@ -88,7 +88,10 @@ export function OrderDetailPage() {
               </div>
               {totals.discountAmount > 0 ? (
                 <div className="summary-row">
-                  <dt>Giảm giá</dt>
+                  <dt>
+                    Giảm giá
+                    {totals.couponRef ? ` (${totals.couponRef.code})` : ''}
+                  </dt>
                   <dd>-{formatVnd(totals.discountAmount)}</dd>
                 </div>
               ) : null}

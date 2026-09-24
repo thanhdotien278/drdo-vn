@@ -145,6 +145,9 @@ export function toOrderDetailDto(
             couponId: order.totals.couponRef.couponId
               ? String(order.totals.couponRef.couponId)
               : null,
+            promotionId: order.totals.couponRef.promotionId
+              ? String(order.totals.couponRef.promotionId)
+              : null,
             code: order.totals.couponRef.code,
             discountType: order.totals.couponRef.discountType,
             discountValue: order.totals.couponRef.discountValue,

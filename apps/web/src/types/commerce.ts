@@ -42,10 +42,20 @@ export type PaymentMethod = 'cod' | 'bank_transfer' | 'momo_manual';
 export type PaymentStatus = 'unpaid' | 'paid';
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
+/** Epic 9 — immutable coupon snapshot embedded on the order totals block. */
+export interface OrderCouponRef {
+  couponId: string | null;
+  promotionId: string | null;
+  code: string;
+  discountType: 'percentage' | 'fixed_amount';
+  discountValue: number;
+  maxDiscountAmount: number | null;
+}
+
 export interface OrderTotals {
   subtotal: number;
   discountAmount: number;
-  couponRef: unknown;
+  couponRef: OrderCouponRef | null;
   pointsRedeemed: number;
   pointsDiscountAmount: number;
   shippingFee: number;
@@ -158,4 +168,5 @@ export interface CheckoutInput {
   contactEmail?: string;
   notesCustomer?: string;
   pointsToRedeem?: number;
+  couponCode?: string;
 }

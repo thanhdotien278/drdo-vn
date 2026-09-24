@@ -31,6 +31,8 @@ export type CouponDiscountType = (typeof COUPON_DISCOUNT_TYPES)[number];
  */
 export interface OrderCouponSnapshot {
   couponId: Types.ObjectId | string | null;
+  /** Promotion rule behind the coupon at checkout (ERD field; additive). */
+  promotionId: Types.ObjectId | string | null;
   code: string;
   discountType: CouponDiscountType;
   discountValue: number;
@@ -50,6 +52,7 @@ export interface OrderTotals {
 const couponSnapshotSchema = new Schema(
   {
     couponId: { type: Schema.Types.ObjectId, ref: 'Coupon', default: null },
+    promotionId: { type: Schema.Types.ObjectId, ref: 'Promotion', default: null },
     code: { type: String, required: true },
     discountType: { type: String, enum: COUPON_DISCOUNT_TYPES, required: true },
     discountValue: { type: Number, required: true, min: 0 },

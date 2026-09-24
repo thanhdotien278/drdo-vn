@@ -38,6 +38,7 @@ test('computed totals satisfy the embedded schema validation', async () => {
     discountAmount: 20_000,
     couponRef: {
       couponId: null,
+      promotionId: null,
       code: 'SALE10',
       discountType: 'percentage',
       discountValue: 10,
@@ -84,6 +85,7 @@ test('keeps the coupon snapshot immutable on the totals block', () => {
     discountAmount: 10_000,
     couponRef: {
       couponId: '507f1f77bcf86cd799439011',
+      promotionId: '507f1f77bcf86cd799439022',
       code: 'VIP20',
       discountType: 'fixed_amount',
       discountValue: 10_000,
@@ -93,6 +95,7 @@ test('keeps the coupon snapshot immutable on the totals block', () => {
 
   assert.deepEqual(totals.couponRef, {
     couponId: '507f1f77bcf86cd799439011',
+    promotionId: '507f1f77bcf86cd799439022',
     code: 'VIP20',
     discountType: 'fixed_amount',
     discountValue: 10_000,
@@ -118,6 +121,7 @@ test('rejects an invalid coupon snapshot', () => {
         lineItems: [{ lineTotal: 10 }],
         couponRef: {
           couponId: null,
+          promotionId: null,
           code: '',
           discountType: 'percentage',
           discountValue: 10,

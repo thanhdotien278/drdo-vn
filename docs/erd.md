@@ -8,6 +8,8 @@ MVP enum constraints:
 - `ORDERS.paymentMethod`: `cod`, `bank_transfer`, `momo_manual`
 - `ORDERS.orderStatus`: `pending`, `processing`, `shipped`, `delivered`, `cancelled`
 - `PAYMENTS.status`: `unpaid`, `paid`
+- `PROMOTIONS.discountType`: `percentage`, `fixed_amount`
+- `COUPON_REDEMPTIONS.status`: `applied`, `released`
 
 ```mermaid
 erDiagram
@@ -154,6 +156,51 @@ erDiagram
     datetime createdAt
   }
 
+  PROMOTIONS {
+    string _id PK
+    string name
+    string discountType
+    number discountValue
+    number maxDiscountAmount
+    datetime startAt
+    datetime endAt
+    number minOrderTotal
+    string[] productIds
+    string[] categoryIds
+    string[] brandIds
+    string[] tierCodes
+    boolean isActive
+    boolean isDeleted
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  COUPONS {
+    string _id PK
+    string code UK
+    string promotionId FK
+    number usageLimitTotal
+    number usageLimitPerCustomer
+    boolean isActive
+    boolean isDeleted
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  COUPON_REDEMPTIONS {
+    string _id PK
+    string couponId FK
+    string promotionId FK
+    string orderId FK UK
+    string orderNo
+    string userId FK
+    string code
+    number discountAmount
+    string status
+    datetime releasedAt
+    datetime createdAt
+  }
+
   PAYMENTS {
     string _id PK
     string orderId FK
@@ -206,6 +253,11 @@ erDiagram
   ORDERS ||--o{ ORDER_STATUS_EVENTS : status_history
   USERS ||--o{ ORDER_STATUS_EVENTS : changes
 
+  PROMOTIONS ||--o{ COUPONS : issues
+  COUPONS ||--o{ COUPON_REDEMPTIONS : redeemed_as
+  ORDERS ||--o| COUPON_REDEMPTIONS : applies
+  USERS ||--o{ COUPON_REDEMPTIONS : redeems
+
   ORDERS ||--o{ PAYMENTS : has
   USERS ||--o{ PAYMENTS : updates
 
@@ -218,6 +270,8 @@ erDiagram
 MVP entities added 2026-07-26 alongside the PRD scope change: `WISHLIST_ITEMS`, `REVIEWS`, `BANNERS`, `MEMBERSHIP_TIERS`, `LOYALTY_LEDGER`, `LOYALTY_ACCOUNTS`, `PROMOTIONS`, `COUPONS`, `COUPON_REDEMPTIONS`, `AUDIT_LOGS`.
 
 Note on ORDERS: the totals block is exactly the seven FR-09.7 fields, always stored even when zero. `couponRef` is an embedded immutable snapshot (couponId, promotionId, code, discountType, discountValue, maxDiscountAmount), null when no coupon was used. `inventoryState` (`reserved` | `deducted` | `released`) is the exactly-once marker that makes shipment deduction and cancellation release idempotent without transactions (ADR-0011).
+
+Note on COUPONS: `code` is unique and uppercased. Soft deletion rewrites it to `<code>--del-<ts>` so the original code is freed for reuse while the row (and `couponRef.couponId` on historical orders) survives.
 
 There is deliberately **no `PAYMENTS` collection** in MVP: order-level `paymentStatus`/`paidAt` plus the audit log already satisfy FR-04.9-04.12, and a separate document would be a second source of truth. It returns in Phase 2 when real gateway attempts need modelling.
 

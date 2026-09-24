@@ -2,6 +2,7 @@ import { seedCatalog } from './catalog.seed.js';
 import { seedEngagement } from './engagement.seed.js';
 import { seedLoyalty } from './loyalty.seed.js';
 import { seedOrders } from './orders.seed.js';
+import { seedPromotions } from './promotions.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -15,4 +16,5 @@ export const seedRegistry: Record<string, () => Promise<string | void>> = {
   orders: seedOrders,
   engagement: seedEngagement,
   loyalty: seedLoyalty,
+  promotions: seedPromotions,
 };

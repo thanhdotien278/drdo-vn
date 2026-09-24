@@ -2,8 +2,10 @@ import type { CheckoutInput, OrderDetail, OrderListItem, OrderPreview } from '..
 import type { PageMeta } from '../types/catalog';
 import { apiGet, apiRequest } from './client';
 
-export function previewOrder(pointsToRedeem = 0): Promise<{ data: OrderPreview }> {
-  return apiRequest<OrderPreview>('POST', '/orders/preview', { body: { pointsToRedeem } });
+export function previewOrder(
+  input: { pointsToRedeem?: number; couponCode?: string } = {},
+): Promise<{ data: OrderPreview }> {
+  return apiRequest<OrderPreview>('POST', '/orders/preview', { body: input });
 }
 
 export function createOrder(input: CheckoutInput): Promise<{ data: OrderDetail }> {
