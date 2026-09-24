@@ -519,9 +519,17 @@ export function CheckoutPage() {
           <ul className="checkout-items">
             {(cart?.items ?? []).map((item) => (
               <li key={item.id}>
-                <span>
-                  {item.product?.name ?? 'Sản phẩm'} × {item.qty}
-                </span>
+                <div className="checkout-item__media">
+                  {item.product?.imageUrl ? (
+                    <img src={item.product.imageUrl} alt={item.product.imageAlt} />
+                  ) : (
+                    <div className="product-card__media-placeholder" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="checkout-item__info">
+                  <span>{item.product?.name ?? 'Sản phẩm'}</span>
+                  <span className="muted">× {item.qty}</span>
+                </div>
                 <span>{formatVnd(item.lineTotal)}</span>
               </li>
             ))}

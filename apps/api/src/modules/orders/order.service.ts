@@ -11,7 +11,7 @@ import {
 import { OrderStatusEventModel } from '../../models/OrderStatusEvent.js';
 import { CouponRedemptionModel } from '../../models/CouponRedemption.js';
 import { LoyaltyLedgerEntryModel } from '../../models/LoyaltyLedgerEntry.js';
-import { ProductModel, type ProductDocument } from '../../models/Product.js';
+import { ProductModel, primaryImage, type ProductDocument } from '../../models/Product.js';
 import type { UserDto } from '../auth/auth.dto.js';
 import { ApiError } from '../../utils/apiError.js';
 import { buildPageMeta, paginationQuerySchema, skipForPage } from '../../utils/pagination.js';
@@ -90,6 +90,7 @@ interface OrderLine {
   productId: Types.ObjectId;
   nameSnapshot: string;
   skuSnapshot: string;
+  imageUrlSnapshot: string;
   unitPrice: number;
   qty: number;
   lineTotal: number;
@@ -161,6 +162,7 @@ async function buildOrderLines(
       productId: product._id,
       nameSnapshot: product.name,
       skuSnapshot: product.sku,
+      imageUrlSnapshot: primaryImage(product)?.url ?? '',
       unitPrice,
       qty: item.qty,
       lineTotal: unitPrice * item.qty,

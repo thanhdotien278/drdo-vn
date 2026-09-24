@@ -1,5 +1,5 @@
 import type { CartItemDocument } from '../../models/CartItem.js';
-import { productDerived, type ProductDocument } from '../../models/Product.js';
+import { primaryImage, productDerived, type ProductDocument } from '../../models/Product.js';
 
 export interface CartItemProductDto {
   id: string;
@@ -36,6 +36,7 @@ export function toCartItemDto(
   product: ProductDocument | null,
 ): CartItemDto {
   const unitPrice = item.unitPriceSnapshot;
+  const image = product ? primaryImage(product) : undefined;
   return {
     id: String(item._id),
     qty: item.qty,
@@ -47,10 +48,8 @@ export function toCartItemDto(
           name: product.name,
           slug: product.slug,
           sku: product.sku,
-          imageUrl: (product.images.find((image) => image.isPrimary) ?? product.images[0])?.url ?? '',
-          imageAlt:
-            (product.images.find((image) => image.isPrimary) ?? product.images[0])?.alt ??
-            product.name,
+          imageUrl: image?.url ?? '',
+          imageAlt: image?.alt ?? product.name,
           ...productDerived(product),
           purchasable: product.isActive && !product.isDeleted,
         }

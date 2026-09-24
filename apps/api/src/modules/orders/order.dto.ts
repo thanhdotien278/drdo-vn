@@ -15,6 +15,7 @@ export interface OrderItemDto {
   productId: string;
   name: string;
   sku: string;
+  imageUrl: string;
   unitPrice: number;
   qty: number;
   lineTotal: number;
@@ -91,6 +92,8 @@ function toOrderItemDto(item: OrderItemDocument): OrderItemDto {
     productId: String(item.productId),
     name: item.nameSnapshot,
     sku: item.skuSnapshot,
+    // Orders placed before image snapshots existed fall back to ''.
+    imageUrl: item.imageUrlSnapshot ?? '',
     unitPrice: item.unitPrice,
     qty: item.qty,
     lineTotal: item.lineTotal,

@@ -2114,7 +2114,34 @@ button {
 .checkout-items li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
+}
+
+.checkout-item__media,
+.order-item__media {
+  width: 64px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-cream);
+}
+
+.checkout-item__media img,
+.order-item__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.checkout-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .address-list {
@@ -2280,7 +2307,12 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  align-items: baseline;
+  align-items: center;
+}
+
+.order-item__info {
+  flex: 1;
+  min-width: 0;
 }
 
 .order-item__name {

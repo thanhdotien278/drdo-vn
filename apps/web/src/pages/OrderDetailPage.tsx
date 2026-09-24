@@ -75,6 +75,13 @@ export function OrderDetailPage() {
             <ul className="order-items">
               {data.items.map((item) => (
                 <li key={item.id} className="order-item">
+                  <div className="order-item__media">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} />
+                    ) : (
+                      <div className="product-card__media-placeholder" aria-hidden="true" />
+                    )}
+                  </div>
                   <div className="order-item__info">
                     <p className="order-item__name">{item.name}</p>
                     <p className="muted">

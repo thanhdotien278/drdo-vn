@@ -67,6 +67,8 @@ export interface OrderItem {
   productId: string;
   name: string;
   sku: string;
+  /** Image snapshot taken at order time; '' for orders placed before it existed. */
+  imageUrl: string;
   unitPrice: number;
   qty: number;
   lineTotal: number;

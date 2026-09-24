@@ -7,7 +7,7 @@ import {
   type PaymentMethod,
 } from '../models/Order.js';
 import { OrderStatusEventModel } from '../models/OrderStatusEvent.js';
-import { ProductModel } from '../models/Product.js';
+import { ProductModel, primaryImage } from '../models/Product.js';
 import { UserModel } from '../models/User.js';
 import { computeOrderTotals } from '../modules/orders/orderTotals.js';
 
@@ -100,6 +100,7 @@ export async function seedOrders(): Promise<string> {
       productId: Types.ObjectId;
       nameSnapshot: string;
       skuSnapshot: string;
+      imageUrlSnapshot: string;
       unitPrice: number;
       qty: number;
       lineTotal: number;
@@ -115,6 +116,7 @@ export async function seedOrders(): Promise<string> {
         productId: product._id,
         nameSnapshot: product.name,
         skuSnapshot: product.sku,
+        imageUrlSnapshot: primaryImage(product)?.url ?? '',
         unitPrice,
         qty: line.qty,
         lineTotal: unitPrice * line.qty,

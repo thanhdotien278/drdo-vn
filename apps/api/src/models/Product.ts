@@ -61,6 +61,13 @@ export interface ProductDerived {
   inStock: boolean;
 }
 
+/** Thumbnail source — the flagged primary image, else the first one. */
+export function primaryImage(
+  product: Pick<Product, 'images'>,
+): Product['images'][number] | undefined {
+  return product.images.find((image) => image.isPrimary) ?? product.images[0];
+}
+
 /**
  * Reads the persisted derived fields maintained by `syncDerivedFields` and
  * `inventory.ts`, falling back to the base fields for documents that predate them.

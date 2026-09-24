@@ -141,6 +141,7 @@ erDiagram
     string productId FK
     string nameSnapshot
     string skuSnapshot
+    string imageUrlSnapshot
     number unitPrice
     int qty
     number lineTotal
