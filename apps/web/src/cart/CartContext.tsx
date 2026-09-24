@@ -4,12 +4,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { fetchCart } from '../api/cart';
+import { addCartItem, fetchCart } from '../api/cart';
 import { useAuth } from '../auth/AuthContext';
 import type { Cart } from '../types/commerce';
+import { guestCart, mergeGuestCart as mergeEntries } from './guestCart';
 
 interface CartContextValue {
   cart: Cart | null;
@@ -19,6 +21,11 @@ interface CartContextValue {
   /** Replaces local state with a cart returned by a mutation response. */
   setCart: (cart: Cart) => void;
   refresh: () => Promise<void>;
+  /**
+   * Replays the guest cart into the signed-in customer's persistent cart.
+   * Safe to call multiple times — concurrent calls share one merge.
+   */
+  mergeGuestCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -39,22 +46,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const mergeRef = useRef<Promise<void> | null>(null);
+  const mergeGuestCart = useCallback((): Promise<void> => {
+    mergeRef.current ??= mergeEntries(addCartItem)
+      .then(() => refresh())
+      .finally(() => {
+        mergeRef.current = null;
+      });
+    return mergeRef.current;
+  }, [refresh]);
+
   useEffect(() => {
     if (authStatus === 'loading') return;
     if (!isCustomer) {
-      setCartState(null);
+      setCartState(guestCart());
       setStatus('ready');
       return;
     }
     setStatus('loading');
-    void refresh().finally(() => setStatus('ready'));
-  }, [authStatus, isCustomer, refresh]);
+    void mergeGuestCart().finally(() => setStatus('ready'));
+  }, [authStatus, isCustomer, mergeGuestCart]);
 
   const setCart = useCallback((next: Cart) => setCartState(next), []);
 
   const value = useMemo<CartContextValue>(
-    () => ({ cart, status, itemCount: cart?.itemCount ?? 0, setCart, refresh }),
-    [cart, status, setCart, refresh],
+    () => ({ cart, status, itemCount: cart?.itemCount ?? 0, setCart, refresh, mergeGuestCart }),
+    [cart, status, setCart, refresh, mergeGuestCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

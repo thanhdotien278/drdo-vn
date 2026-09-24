@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { mergeGuestCart } = useCart();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -18,6 +20,9 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       const loggedIn = await login({ email: email.trim(), password });
+      if (loggedIn.roles.includes('customer')) {
+        await mergeGuestCart();
+      }
       const from = searchParams.get('from');
       const home = loggedIn.roles.includes('employee') ? '/employee/orders' : '/';
       navigate(from && from.startsWith('/') ? from : home, { replace: true });

@@ -65,7 +65,7 @@ function CartLink() {
   const { user, status } = useAuth();
   const { itemCount } = useCart();
 
-  if (status === 'loading' || !user || !user.roles.includes('customer')) {
+  if (status === 'loading' || (user && !user.roles.includes('customer'))) {
     return null;
   }
 

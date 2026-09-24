@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 
 export function RegisterPage() {
   const { register } = useAuth();
+  const { mergeGuestCart } = useCart();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,6 +31,7 @@ export function RegisterPage() {
         phone: phone.trim() || undefined,
         password,
       });
+      await mergeGuestCart();
       navigate('/', { replace: true });
     } catch (err) {
       setError(

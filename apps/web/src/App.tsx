@@ -39,14 +39,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="products" element={<ProductListPage />} />
         <Route path="products/:slug" element={<ProductDetailPage />} />
-        <Route
-          path="cart"
-          element={
-            <RequireRole roles={['customer']}>
-              <CartPage />
-            </RequireRole>
-          }
-        />
+        <Route path="cart" element={<CartPage />} />
         <Route
           path="checkout"
           element={

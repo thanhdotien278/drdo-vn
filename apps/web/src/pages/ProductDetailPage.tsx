@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { fetchProductBySlug, fetchRelatedProducts } from '../api/catalog';
 import { addCartItem } from '../api/cart';
 import { ApiRequestError } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
 import { ProductGrid } from '../components/ProductCard';
 import { ProductReviews } from '../components/ProductReviews';
@@ -24,8 +23,6 @@ function DetailBlock({ title, children }: { title: string; children: React.React
 
 export function ProductDetailPage() {
   const { slug = '' } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { setCart } = useCart();
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -174,13 +171,9 @@ export function ProductDetailPage() {
               className="button button--primary button--lg"
               disabled={!data.inStock || adding}
               onClick={() => {
-                if (!user) {
-                  navigate(`/login?from=${encodeURIComponent(`/products/${data.slug}`)}`);
-                  return;
-                }
                 setCartMessage(null);
                 setAdding(true);
-                addCartItem(data.id, qty)
+                addCartItem(data, qty)
                   .then(({ data: cart }) => {
                     setCart(cart);
                     setCartMessage({ kind: 'ok', text: 'Đã thêm vào giỏ hàng.' });
