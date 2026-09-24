@@ -105,7 +105,7 @@ before(async () => {
   ]);
 
   const passwordHash = await hashPassword(PASSWORD);
-  for (const email of ['cust-a@test.dev', 'cust-b@test.dev']) {
+  for (const email of ['cust-a@test.dev', 'cust-b@test.dev', 'cust-c@test.dev']) {
     await UserModel.create({
       email,
       passwordHash,
@@ -518,4 +518,71 @@ test('pre-shipment cancellation releases the reservation exactly once', async ()
   assert.equal(await releaseOrderReservation(orderId), false);
   const final = await ProductModel.findById(products.serum.id).exec();
   assert.equal(final!.stockReserved, 3);
+});
+
+// ---------- Checkout "save this address" opt-in ----------
+
+test('checkout with saveAddress persists the address; first saved address is default', async () => {
+  const token = await login('cust-c@test.dev');
+  await addToCart(token, products.serum.id, 1);
+
+  const res = await api('POST', '/api/orders', {
+    token,
+    body: { paymentMethod: 'cod', shipping: SHIPPING, saveAddress: true },
+  });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+  assert.equal(
+    (res.body.data as { addressSaved?: boolean }).addressSaved,
+    true,
+    'the opt-in address save is reported in the checkout response',
+  );
+
+  const list = await api('GET', '/api/addresses', { token });
+  const addresses = list.body.data as Array<{ isDefault: boolean; line1: string; phone: string }>;
+  assert.equal(addresses.length, 1);
+  assert.equal(addresses[0].isDefault, true, 'first saved address becomes default');
+  assert.equal(addresses[0].line1, SHIPPING.line1);
+});
+
+test('checkout without saveAddress does not write to the address book', async () => {
+  const token = await login('cust-c@test.dev');
+  await addToCart(token, products.serum.id, 1);
+
+  const res = await api('POST', '/api/orders', {
+    token,
+    body: { paymentMethod: 'cod', shipping: { ...SHIPPING, line1: 'Không Lưu' } },
+  });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+  assert.equal(
+    (res.body.data as { addressSaved?: boolean }).addressSaved,
+    false,
+    'no opt-in means nothing was saved',
+  );
+
+  const list = await api('GET', '/api/addresses', { token });
+  const addresses = list.body.data as Array<{ line1: string }>;
+  assert.equal(addresses.length, 1, 'still only the previously saved address');
+  assert.equal(addresses[0].line1, SHIPPING.line1);
+});
+
+test('profile name/phone updates never touch order shipping snapshots', async () => {
+  const token = await login('cust-c@test.dev');
+  const orders = (await api('GET', '/api/orders', { token })).body.data as Array<{
+    orderNo: string;
+  }>;
+  const orderNo = orders[0].orderNo;
+
+  const before = await api('GET', `/api/orders/${orderNo}`, { token });
+  const beforeShipping = (before.body.data as { shipping: Record<string, string> }).shipping;
+
+  const update = await api('PATCH', '/api/auth/me', {
+    token,
+    body: { fullName: 'Tên Mới Hoàn Toàn', phone: '0909000111' },
+  });
+  assert.equal(update.status, 200);
+
+  const after = await api('GET', `/api/orders/${orderNo}`, { token });
+  const afterShipping = (after.body.data as { shipping: Record<string, string> }).shipping;
+  assert.deepEqual(afterShipping, beforeShipping);
+  assert.equal(afterShipping.fullName, SHIPPING.fullName);
 });

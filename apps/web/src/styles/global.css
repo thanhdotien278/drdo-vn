@@ -2140,6 +2140,35 @@ button {
   gap: 12px;
 }
 
+/* ---------- Account profile ---------- */
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+}
+
+.success-text {
+  color: var(--color-forest);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-field input[readonly] {
+  background: var(--color-cream);
+  color: var(--color-text-muted);
+}
+
+.profile-address__manage {
+  margin-top: 14px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 .order-list {
   display: flex;
   flex-direction: column;

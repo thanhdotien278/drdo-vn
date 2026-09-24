@@ -17,6 +17,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { buildPageMeta, paginationQuerySchema, skipForPage } from '../../utils/pagination.js';
 import { parseInput } from '../../utils/validate.js';
 import { recordAudit } from '../audit/audit.service.js';
+import { createAddress } from '../addresses/address.service.js';
 import { loadCartItems } from '../cart/cart.service.js';
 import { releaseStock, reserveStock } from './inventory.js';
 import {
@@ -65,6 +66,7 @@ const checkoutSchema = z.object({
   notesCustomer: z.string().trim().max(500).optional().default(''),
   pointsToRedeem: z.number().int().min(0).optional().default(0),
   couponCode: z.string().trim().max(50).optional(),
+  saveAddress: z.boolean().optional().default(false),
 });
 
 const previewSchema = z.object({
@@ -353,9 +355,26 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
     throw error;
   }
 
+  // FR-09.5 — "save this address" at checkout is best-effort: the order is
+  // already committed, so a failure here must not roll it back. The first
+  // saved address becomes default automatically via createAddress; only
+  // explicit opt-in writes to the address book — order snapshots are never
+  // copied into it.
+  let addressSaved = false;
+  if (data.saveAddress && data.shipping) {
+    try {
+      await createAddress(user.id, data.shipping);
+      addressSaved = true;
+    } catch (error) {
+      // Best-effort, but never silent: the failure is logged for ops and the
+      // `addressSaved` flag tells the client the opt-in did not take effect.
+      console.error('[checkout] failed to save address for user', user.id, error);
+    }
+  }
+
   const orderItems = await OrderItemModel.find({ orderId: order!._id }).exec();
   const events = await OrderStatusEventModel.find({ orderId: order!._id }).sort({ createdAt: 1 }).exec();
-  return toOrderDetailDto(order!, orderItems, events);
+  return { ...toOrderDetailDto(order!, orderItems, events), addressSaved };
 }
 
 export interface OrderPreviewDto {

@@ -7,7 +7,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { fetchCurrentUser, loginAccount, logoutAccount, registerAccount, type RegisterInput } from '../api/auth';
+import {
+  fetchCurrentUser,
+  loginAccount,
+  logoutAccount,
+  registerAccount,
+  updateProfile as updateProfileApi,
+  type RegisterInput,
+  type UpdateProfileInput,
+} from '../api/auth';
 import { clearAuthToken, getAuthToken, setAuthToken } from '../api/client';
 import type { AuthUser } from '../types/auth';
 
@@ -18,6 +26,8 @@ interface AuthContextValue {
   login: (input: { email: string; password: string }) => Promise<AuthUser>;
   register: (input: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
+  /** Saves name/phone via PATCH /auth/me and updates the session user. */
+  updateProfile: (input: UpdateProfileInput) => Promise<AuthUser>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -71,9 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback(async (input: UpdateProfileInput) => {
+    const { data } = await updateProfileApi(input);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, login, register, logout }),
-    [user, status, login, register, logout],
+    () => ({ user, status, login, register, logout, updateProfile }),
+    [user, status, login, register, logout, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

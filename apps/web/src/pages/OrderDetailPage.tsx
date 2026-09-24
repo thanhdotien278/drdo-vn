@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { fetchOrder } from '../api/orders';
 import { ApiRequestError } from '../api/client';
 import { StateBlock } from '../components/StateBlock';
@@ -14,7 +14,11 @@ import {
 
 export function OrderDetailPage() {
   const { orderNo = '' } = useParams();
+  const location = useLocation();
   const order = useAsync<OrderDetail>(async () => (await fetchOrder(orderNo)).data, [orderNo]);
+  // Set by checkout when the opt-in "save this address" write failed.
+  const addressSaveFailed =
+    (location.state as { addressSaveFailed?: boolean } | null)?.addressSaveFailed === true;
 
   if (order.status === 'loading') {
     return <StateBlock title="Đang tải đơn hàng…" />;
@@ -57,6 +61,12 @@ export function OrderDetailPage() {
           </span>
         </div>
       </div>
+
+      {addressSaveFailed ? (
+        <p className="error-text" role="alert">
+          Đơn hàng đã được tạo, nhưng không lưu được địa chỉ vào sổ địa chỉ.
+        </p>
+      ) : null}
 
       <div className="order-detail__layout">
         <div className="order-detail__main">

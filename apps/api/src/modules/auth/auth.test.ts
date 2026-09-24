@@ -271,3 +271,118 @@ test('admin can access admin APIs; roles are exact (no implicit employee)', asyn
   assert.equal((await api('GET', '/api/employee/orders', { token })).status, 403);
   assert.equal((await api('GET', '/api/cart', { token })).status, 403);
 });
+
+// ---------- Self-service profile (PATCH /auth/me) ----------
+
+test('PATCH /auth/me updates own name and phone; email/roles/status are stripped', async () => {
+  const token = await login('customer@test.dev');
+  const res = await api('PATCH', '/api/auth/me', {
+    token,
+    body: {
+      fullName: 'Khách Đổi Tên',
+      phone: '0985 835 566',
+      email: 'hacked@test.dev',
+      roles: ['admin'],
+      status: 'blocked',
+      passwordHash: 'injected',
+      password: 'injected',
+    },
+  });
+
+  assert.equal(res.status, 200);
+  const user = (res.body.data as { user: Record<string, unknown> }).user;
+  assert.equal(user.fullName, 'Khách Đổi Tên');
+  assert.equal(user.phone, '0985 835 566');
+  assert.equal(user.email, 'customer@test.dev', 'email must not be changeable here');
+  assert.deepEqual(user.roles, ['customer']);
+  assert.equal(user.status, 'active');
+  assert.equal(user.passwordHash, undefined);
+
+  const me = await api('GET', '/api/auth/me', { token });
+  assert.equal((me.body.data as { user: { fullName: string } }).user.fullName, 'Khách Đổi Tên');
+});
+
+test('PATCH /auth/me rejects anonymous requests and invalid payloads', async () => {
+  assert.equal((await api('PATCH', '/api/auth/me', { body: { fullName: 'X Y' } })).status, 401);
+
+  const token = await login('customer@test.dev');
+  assert.equal(
+    (await api('PATCH', '/api/auth/me', { token, body: { fullName: 'A' } })).status,
+    400,
+  );
+  assert.equal(
+    (await api('PATCH', '/api/auth/me', { token, body: { phone: 'abc!!' } })).status,
+    400,
+  );
+  assert.equal(
+    (await api('PATCH', '/api/auth/me', { token, body: { phone: '0000000000' } })).status,
+    400,
+    'all-zero phone numbers are clearly invalid',
+  );
+  assert.equal(
+    (await api('PATCH', '/api/auth/me', { token, body: {} })).status,
+    400,
+    'an empty update payload is rejected',
+  );
+});
+
+test('profile update is scoped to the token — a supplied userId cannot retarget it', async () => {
+  const { UserModel } = await import('../../models/User.js');
+  const other = await UserModel.findOne({ email: 'employee@test.dev' }).exec();
+
+  const token = await login('customer@test.dev');
+  const res = await api('PATCH', '/api/auth/me', {
+    token,
+    body: { userId: String(other!._id), id: String(other!._id), fullName: 'Chỉ Tôi Được Đổi' },
+  });
+  assert.equal(res.status, 200);
+
+  const untouched = await UserModel.findById(other!._id).exec();
+  assert.notEqual(untouched!.fullName, 'Chỉ Tôi Được Đổi');
+});
+
+// ---------- Password change (PATCH /auth/password) ----------
+
+test('password change: wrong current password fails; correct one rotates credentials', async () => {
+  const reg = await api('POST', '/api/auth/register', {
+    body: { email: 'pwchange@test.dev', password: PASSWORD, fullName: 'Đổi Mật Khẩu' },
+  });
+  assert.equal(reg.status, 201);
+  const token = (reg.body.data as { token: string }).token;
+
+  const wrong = await api('PATCH', '/api/auth/password', {
+    token,
+    body: { currentPassword: 'sai-mat-khau', newPassword: 'NewPassword456!' },
+  });
+  assert.equal(wrong.status, 401);
+
+  const weak = await api('PATCH', '/api/auth/password', {
+    token,
+    body: { currentPassword: PASSWORD, newPassword: '123' },
+  });
+  assert.equal(weak.status, 400, 'new password must follow the existing policy');
+
+  const ok = await api('PATCH', '/api/auth/password', {
+    token,
+    body: { currentPassword: PASSWORD, newPassword: 'NewPassword456!' },
+  });
+  assert.equal(ok.status, 200);
+  assert.equal((ok.body.data as { passwordHash?: string }).passwordHash, undefined);
+
+  const oldLogin = await api('POST', '/api/auth/login', {
+    body: { email: 'pwchange@test.dev', password: PASSWORD },
+  });
+  assert.equal(oldLogin.status, 401, 'old password must stop working');
+
+  const newLogin = await api('POST', '/api/auth/login', {
+    body: { email: 'pwchange@test.dev', password: 'NewPassword456!' },
+  });
+  assert.equal(newLogin.status, 200, 'new password must log in');
+});
+
+test('PATCH /auth/password rejects anonymous requests', async () => {
+  const res = await api('PATCH', '/api/auth/password', {
+    body: { currentPassword: PASSWORD, newPassword: 'NewPassword456!' },
+  });
+  assert.equal(res.status, 401);
+});

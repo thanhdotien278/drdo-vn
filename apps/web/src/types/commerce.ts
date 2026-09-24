@@ -115,6 +115,8 @@ export interface OrderDetail {
   totals: OrderTotals;
   shipping: OrderShipping;
   timeline: OrderTimelineEvent[];
+  /** Checkout response only — whether the opt-in shipping address was saved. */
+  addressSaved?: boolean;
 }
 
 export interface OrderPreviewLoyalty {
@@ -169,4 +171,6 @@ export interface CheckoutInput {
   notesCustomer?: string;
   pointsToRedeem?: number;
   couponCode?: string;
+  /** Opt-in: save a newly entered shipping address to the address book. */
+  saveAddress?: boolean;
 }

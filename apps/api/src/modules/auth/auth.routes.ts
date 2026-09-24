@@ -1,8 +1,14 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/requireAuth.js';
+import { getAuthUser, requireAuth } from '../../middleware/requireAuth.js';
 import { ApiError } from '../../utils/apiError.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { getUserById, loginWithPassword, registerCustomer } from './auth.service.js';
+import {
+  changePassword,
+  getUserById,
+  loginWithPassword,
+  registerCustomer,
+  updateProfile,
+} from './auth.service.js';
 
 export const authRouter = Router();
 
@@ -30,6 +36,23 @@ authRouter.get(
       throw ApiError.unauthorized();
     }
     res.json({ data: { user } });
+  }),
+);
+
+authRouter.patch(
+  '/auth/me',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    res.json({ data: { user: await updateProfile(getAuthUser(req).id, req.body) } });
+  }),
+);
+
+authRouter.patch(
+  '/auth/password',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await changePassword(getAuthUser(req).id, req.body);
+    res.json({ data: { ok: true } });
   }),
 );
 

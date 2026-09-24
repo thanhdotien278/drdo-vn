@@ -49,6 +49,7 @@ export function CheckoutPage() {
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('saved');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [shipping, setShipping] = useState(EMPTY_SHIPPING);
+  const [saveAddress, setSaveAddress] = useState(false);
   const [contactEmail, setContactEmail] = useState(user?.email ?? '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [notes, setNotes] = useState('');
@@ -152,10 +153,16 @@ export function CheckoutPage() {
         couponCode: submittedCoupon ?? undefined,
         ...(effectiveMode === 'saved' && effectiveAddressId
           ? { addressId: effectiveAddressId }
-          : { shipping }),
+          : { shipping, saveAddress }),
       });
       await refresh();
-      navigate(`/orders/${order.orderNo}`, { replace: true });
+      // If the customer opted in to saving the address but the best-effort
+      // write failed, carry a flag so the order page can say so.
+      navigate(`/orders/${order.orderNo}`, {
+        replace: true,
+        state:
+          saveAddress && order.addressSaved !== true ? { addressSaveFailed: true } : undefined,
+      });
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Không đặt được đơn hàng. Vui lòng thử lại.');
       await refresh();
@@ -345,6 +352,14 @@ export function CheckoutPage() {
                     onChange={(event) => setShipping({ ...shipping, province: event.target.value })}
                   />
                 </div>
+                <label className="checkbox form-field--wide">
+                  <input
+                    type="checkbox"
+                    checked={saveAddress}
+                    onChange={(event) => setSaveAddress(event.target.checked)}
+                  />
+                  Lưu địa chỉ này cho lần sau
+                </label>
               </div>
             ) : null}
 

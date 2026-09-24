@@ -63,6 +63,8 @@ export interface OrderDetailDto {
   totals: OrderTotals;
   shipping: OrderShippingDto;
   timeline: OrderTimelineEventDto[];
+  /** Checkout response only — whether the opt-in shipping address was saved. */
+  addressSaved?: boolean;
 }
 
 /** Account behind the order — staff-facing context beyond the shipping snapshot. */
