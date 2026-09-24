@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { fetchBrands, fetchCategories, fetchProducts } from '../api/catalog';
+import { PageContainer } from '../components/PageContainer';
 import { Pagination } from '../components/Pagination';
 import { ProductGrid } from '../components/ProductCard';
 import { LoadingGrid, StateBlock } from '../components/StateBlock';
@@ -95,7 +96,9 @@ export function ProductListPage() {
     availability !== 'all';
 
   return (
-    <div className={filtersOpen ? 'catalog-layout catalog-layout--filters-open' : 'catalog-layout'}>
+    <PageContainer
+      className={filtersOpen ? 'page catalog-layout catalog-layout--filters-open' : 'page catalog-layout'}
+    >
       <div className="catalog-toolbar">
         <button
           type="button"
@@ -255,6 +258,6 @@ export function ProductListPage() {
           </>
         ) : null}
       </section>
-    </div>
+    </PageContainer>
   );
 }

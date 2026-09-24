@@ -2,10 +2,15 @@ import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import type { UserRole } from '../types/auth';
+import { PageContainer } from './PageContainer';
 import { StateBlock } from './StateBlock';
 
 function LoadingState() {
-  return <StateBlock title="Đang tải…" description="Đang kiểm tra phiên đăng nhập." />;
+  return (
+    <PageContainer className="page">
+      <StateBlock title="Đang tải…" description="Đang kiểm tra phiên đăng nhập." />
+    </PageContainer>
+  );
 }
 
 /**
@@ -40,10 +45,12 @@ export function RequireRole({ roles, children }: { roles: UserRole[]; children: 
   }
   if (!roles.some((role) => user.roles.includes(role))) {
     return (
-      <StateBlock
-        title="Không có quyền truy cập"
-        description="Tài khoản của bạn không được phép sử dụng tính năng này."
-      />
+      <PageContainer className="page">
+        <StateBlock
+          title="Không có quyền truy cập"
+          description="Tài khoản của bạn không được phép sử dụng tính năng này."
+        />
+      </PageContainer>
     );
   }
   return children;

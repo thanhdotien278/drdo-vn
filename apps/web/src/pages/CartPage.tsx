@@ -141,7 +141,7 @@ export function CartPage() {
 
   if (status === 'loading') {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock title="Đang tải giỏ hàng…" />
       </div>
     );
@@ -149,7 +149,7 @@ export function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock
           title="Giỏ hàng đang trống"
           description="Khám phá các sản phẩm chăm sóc da và thêm vào giỏ nhé."
@@ -166,7 +166,7 @@ export function CartPage() {
   const hasUnavailable = cart.items.some((item) => itemUnavailable(item) !== null);
 
   return (
-    <div className="page cart-page">
+    <div className="page-container page cart-page">
       <h1>Giỏ hàng</h1>
       <p className="muted">{cart.itemCount} sản phẩm</p>
 

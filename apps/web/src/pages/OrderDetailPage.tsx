@@ -17,24 +17,18 @@ export function OrderDetailPage() {
   const order = useAsync<OrderDetail>(async () => (await fetchOrder(orderNo)).data, [orderNo]);
 
   if (order.status === 'loading') {
-    return (
-      <div className="page">
-        <StateBlock title="Đang tải đơn hàng…" />
-      </div>
-    );
+    return <StateBlock title="Đang tải đơn hàng…" />;
   }
 
   if (order.status === 'error' || !order.data) {
     const notFound = order.error instanceof ApiRequestError && order.error.status === 404;
     return (
-      <div className="page">
-        <StateBlock
-          title={notFound ? 'Không tìm thấy đơn hàng' : 'Không tải được đơn hàng'}
-          description={notFound ? undefined : order.error?.message}
-          actionLabel={notFound ? undefined : 'Thử lại'}
-          onAction={notFound ? undefined : order.reload}
-        />
-      </div>
+      <StateBlock
+        title={notFound ? 'Không tìm thấy đơn hàng' : 'Không tải được đơn hàng'}
+        description={notFound ? undefined : order.error?.message}
+        actionLabel={notFound ? undefined : 'Thử lại'}
+        onAction={notFound ? undefined : order.reload}
+      />
     );
   }
 
@@ -42,7 +36,7 @@ export function OrderDetailPage() {
   const { shipping, totals } = data;
 
   return (
-    <div className="page order-detail">
+    <div className="order-detail">
       <nav className="breadcrumb" aria-label="Đường dẫn">
         <Link to="/orders">Đơn hàng của tôi</Link>
         <span aria-hidden="true">/</span>

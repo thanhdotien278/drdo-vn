@@ -1,7 +1,15 @@
-import { useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { Link, NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
+import type { AuthUser } from '../types/auth';
+import { ACCOUNT_NAV_ITEMS, type AccountNavIcon } from './accountNav';
 
 function LeafMark({ className }: { className?: string }) {
   return (
@@ -70,16 +78,196 @@ function CartLink() {
   }
 
   return (
-    <Link className="site-header__auth-link cart-link" to="/cart">
-      Giỏ hàng
+    <Link
+      className="cart-link"
+      to="/cart"
+      aria-label={itemCount > 0 ? `Giỏ hàng, ${itemCount} sản phẩm` : 'Giỏ hàng'}
+    >
+      <svg className="cart-link__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M4 5h1.8l2.3 10.4a1.6 1.6 0 0 0 1.6 1.3h6.7a1.6 1.6 0 0 0 1.6-1.3L19.5 8H7"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="10.4" cy="20" r="1.4" fill="currentColor" />
+        <circle cx="16.9" cy="20" r="1.4" fill="currentColor" />
+      </svg>
       {itemCount > 0 ? <span className="cart-link__count">{itemCount}</span> : null}
     </Link>
   );
 }
 
-function AuthActions() {
-  const { user, status, logout } = useAuth();
+function userInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return `${first}${last}`.toUpperCase();
+}
+
+function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const initials = userInitials(name);
+
+  return (
+    <span className="user-menu__avatar" aria-hidden="true">
+      {avatarUrl && failedUrl !== avatarUrl ? (
+        <img src={avatarUrl} alt="" onError={() => setFailedUrl(avatarUrl)} />
+      ) : initials ? (
+        initials
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+          <path
+            d="M5.5 19.5c1-3.2 3.4-4.8 6.5-4.8s5.5 1.6 6.5 4.8"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function UserMenu({ user }: { user: AuthUser }) {
+  const { logout } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const items: { to: string; label: string; Icon?: AccountNavIcon }[] = [];
+  if (user.roles.includes('customer')) {
+    items.push(...ACCOUNT_NAV_ITEMS);
+  }
+  if (user.roles.includes('employee')) {
+    items.push(
+      { to: '/employee/orders', label: 'Quản lý đơn' },
+      { to: '/employee/reviews', label: 'Kiểm duyệt' },
+    );
+  }
+  if (user.roles.includes('admin')) {
+    items.push({ to: '/admin', label: 'Quản trị' });
+  }
+
+  function openMenu(focusFirstItem = false) {
+    setOpen(true);
+    if (focusFirstItem) {
+      requestAnimationFrame(() => {
+        rootRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+      });
+    }
+  }
+
+  function handleTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      openMenu(true);
+    }
+  }
+
+  function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const menuItems = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+    );
+    const index = menuItems.indexOf(document.activeElement as HTMLElement);
+    const next =
+      event.key === 'ArrowDown'
+        ? (index + 1) % menuItems.length
+        : (index - 1 + menuItems.length) % menuItems.length;
+    menuItems[next]?.focus();
+  }
+
+  function handleLogout() {
+    setOpen(false);
+    void logout().then(() => navigate('/'));
+  }
+
+  return (
+    <div className="user-menu" ref={rootRef}>
+      <button
+        type="button"
+        ref={triggerRef}
+        className="user-menu__trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="user-menu-dropdown"
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <UserAvatar name={user.fullName} avatarUrl={user.avatarUrl} />
+        <span className="user-menu__name">{user.fullName}</span>
+        <svg className="user-menu__chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="m6.5 9.5 5.5 5.5 5.5-5.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          className="user-menu__dropdown"
+          id="user-menu-dropdown"
+          role="menu"
+          onKeyDown={handleMenuKeyDown}
+        >
+          {items.map((item) => (
+            <Link
+              key={item.to}
+              role="menuitem"
+              className="user-menu__item"
+              to={item.to}
+              onClick={() => setOpen(false)}
+            >
+              {item.Icon ? <item.Icon /> : null}
+              {item.label}
+            </Link>
+          ))}
+          <hr className="user-menu__divider" role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className="user-menu__item user-menu__item--danger"
+            onClick={handleLogout}
+          >
+            Đăng xuất
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AuthActions() {
+  const { user, status } = useAuth();
 
   if (status === 'loading') {
     return null;
@@ -93,53 +281,7 @@ function AuthActions() {
     );
   }
 
-  return (
-    <div className="site-header__user">
-      {user.roles.includes('customer') ? (
-        <>
-          <Link className="site-header__auth-link" to="/orders">
-            Đơn hàng
-          </Link>
-          <Link className="site-header__auth-link" to="/wishlist">
-            Yêu thích
-          </Link>
-          <Link className="site-header__auth-link" to="/addresses">
-            Địa chỉ
-          </Link>
-          <Link className="site-header__auth-link" to="/loyalty">
-            Điểm thưởng
-          </Link>
-        </>
-      ) : null}
-      {user.roles.includes('employee') ? (
-        <>
-          <Link className="site-header__auth-link" to="/employee/orders">
-            Quản lý đơn
-          </Link>
-          <Link className="site-header__auth-link" to="/employee/reviews">
-            Kiểm duyệt
-          </Link>
-        </>
-      ) : null}
-      {user.roles.includes('admin') ? (
-        <Link className="site-header__auth-link" to="/admin">
-          Quản trị
-        </Link>
-      ) : null}
-      <Link className="site-header__auth-link" to="/account" title={user.email}>
-        {user.fullName}
-      </Link>
-      <button
-        type="button"
-        className="link-button"
-        onClick={() => {
-          void logout().then(() => navigate('/'));
-        }}
-      >
-        Đăng xuất
-      </button>
-    </div>
-  );
+  return <UserMenu user={user} />;
 }
 
 export function Layout() {

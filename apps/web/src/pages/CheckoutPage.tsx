@@ -190,7 +190,7 @@ export function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock title="Đang tải thông tin thanh toán…" />
       </div>
     );
@@ -198,7 +198,7 @@ export function CheckoutPage() {
 
   if (emptyCart) {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock
           title="Giỏ hàng đang trống"
           description="Thêm sản phẩm vào giỏ trước khi thanh toán."
@@ -214,7 +214,7 @@ export function CheckoutPage() {
 
   if (loadError) {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock
           title="Không tải được thông tin thanh toán"
           description={loadError.message}
@@ -233,7 +233,7 @@ export function CheckoutPage() {
   const loyalty = effectivePreview?.loyalty;
 
   return (
-    <div className="page checkout-page">
+    <div className="page-container page checkout-page">
       <h1>Thanh toán</h1>
 
       <form className="checkout-layout" onSubmit={handleSubmit}>

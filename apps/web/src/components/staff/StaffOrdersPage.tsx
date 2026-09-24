@@ -34,7 +34,7 @@ export function StaffOrdersPage({ title, listPath, api }: StaffOrdersPageProps) 
   );
 
   return (
-    <div className="page orders-page">
+    <div className="page-container page orders-page">
       <h1>{title}</h1>
 
       <div className="staff-toolbar">

@@ -4,6 +4,7 @@ import { fetchProductBySlug, fetchRelatedProducts } from '../api/catalog';
 import { addCartItem } from '../api/cart';
 import { ApiRequestError } from '../api/client';
 import { useCart } from '../cart/CartContext';
+import { PageContainer } from '../components/PageContainer';
 import { ProductGrid } from '../components/ProductCard';
 import { ProductReviews } from '../components/ProductReviews';
 import { StateBlock } from '../components/StateBlock';
@@ -33,22 +34,28 @@ export function ProductDetailPage() {
   const related = useAsync<ProductListItem[]>(async () => (await fetchRelatedProducts(slug)).data, [slug]);
 
   if (product.status === 'loading') {
-    return <p className="muted">Đang tải sản phẩm…</p>;
+    return (
+      <PageContainer className="page">
+        <p className="muted">Đang tải sản phẩm…</p>
+      </PageContainer>
+    );
   }
 
   if (product.status === 'error') {
     const notFound = product.error instanceof ApiRequestError && product.error.status === 404;
     return (
-      <StateBlock
-        title={notFound ? 'Không tìm thấy sản phẩm' : 'Không tải được sản phẩm'}
-        description={
-          notFound
-            ? 'Sản phẩm có thể đã ngừng kinh doanh hoặc đường dẫn không đúng.'
-            : product.error?.message
-        }
-        actionLabel={notFound ? undefined : 'Thử lại'}
-        onAction={notFound ? undefined : product.reload}
-      />
+      <PageContainer className="page">
+        <StateBlock
+          title={notFound ? 'Không tìm thấy sản phẩm' : 'Không tải được sản phẩm'}
+          description={
+            notFound
+              ? 'Sản phẩm có thể đã ngừng kinh doanh hoặc đường dẫn không đúng.'
+              : product.error?.message
+          }
+          actionLabel={notFound ? undefined : 'Thử lại'}
+          onAction={notFound ? undefined : product.reload}
+        />
+      </PageContainer>
     );
   }
 
@@ -60,7 +67,7 @@ export function ProductDetailPage() {
   const image = data.images[activeImage] ?? data.images[0];
 
   return (
-    <article className="product-detail">
+    <PageContainer as="article" className="page product-detail">
       <nav className="breadcrumb" aria-label="Đường dẫn">
         <Link to="/">Trang chủ</Link>
         <span aria-hidden="true">/</span>
@@ -238,6 +245,6 @@ export function ProductDetailPage() {
           <ProductGrid products={related.data} />
         </DetailBlock>
       ) : null}
-    </article>
+    </PageContainer>
   );
 }

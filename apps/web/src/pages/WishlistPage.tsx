@@ -44,28 +44,28 @@ export function WishlistPage() {
 
   if (status === 'loading' && items === null) {
     return (
-      <div className="page container">
+      <>
         <h1>Yêu thích</h1>
         <StateBlock title="Đang tải danh sách yêu thích…" />
-      </div>
+      </>
     );
   }
 
   if (items === null) {
     return (
-      <div className="page container">
+      <>
         <h1>Yêu thích</h1>
         <StateBlock
           title="Không tải được danh sách yêu thích"
           actionLabel="Thử lại"
           onAction={() => void refresh()}
         />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="page container">
+    <div>
       <div className="admin-page__header">
         <h1>Yêu thích</h1>
         <Link className="button button--outline" to="/products">

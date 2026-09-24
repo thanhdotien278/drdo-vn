@@ -20,16 +20,16 @@ export function LoyaltyPage() {
 
   if (summary.status === 'loading') {
     return (
-      <div className="page container">
+      <>
         <h1>Điểm thưởng</h1>
         <StateBlock title="Đang tải điểm thưởng…" />
-      </div>
+      </>
     );
   }
 
   if (summary.status === 'error' || !summary.data) {
     return (
-      <div className="page container">
+      <>
         <h1>Điểm thưởng</h1>
         <StateBlock
           title="Không tải được điểm thưởng"
@@ -37,14 +37,14 @@ export function LoyaltyPage() {
           actionLabel="Thử lại"
           onAction={summary.reload}
         />
-      </div>
+      </>
     );
   }
 
   const data = summary.data;
 
   return (
-    <div className="page container">
+    <div>
       <h1>Điểm thưởng</h1>
 
       <div className="metric-grid">

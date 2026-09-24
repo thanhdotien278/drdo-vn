@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
+import { AccountLayout } from './components/AccountLayout';
 import { Layout } from './components/Layout';
 import { RequireRole } from './components/RequireAuth';
+import { AccountPage } from './pages/AccountPage';
 import { AddressesPage } from './pages/AddressesPage';
 import { AdminCustomerDetailPage } from './pages/admin/AdminCustomerDetailPage';
 import { AdminCustomersPage } from './pages/admin/AdminCustomersPage';
@@ -28,7 +30,6 @@ import { LoyaltyPage } from './pages/LoyaltyPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { OrdersPage } from './pages/OrdersPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ProductListPage } from './pages/ProductListPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -51,53 +52,19 @@ export function App() {
           }
         />
         <Route
-          path="orders"
           element={
             <RequireRole roles={['customer']}>
-              <OrdersPage />
+              <AccountLayout />
             </RequireRole>
           }
-        />
-        <Route
-          path="orders/:orderNo"
-          element={
-            <RequireRole roles={['customer']}>
-              <OrderDetailPage />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="addresses"
-          element={
-            <RequireRole roles={['customer']}>
-              <AddressesPage />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="loyalty"
-          element={
-            <RequireRole roles={['customer']}>
-              <LoyaltyPage />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="account"
-          element={
-            <RequireRole roles={['customer']}>
-              <PlaceholderPage title="Tài khoản" />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="wishlist"
-          element={
-            <RequireRole roles={['customer']}>
-              <WishlistPage />
-            </RequireRole>
-          }
-        />
+        >
+          <Route path="account" element={<AccountPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:orderNo" element={<OrderDetailPage />} />
+          <Route path="addresses" element={<AddressesPage />} />
+          <Route path="loyalty" element={<LoyaltyPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
+        </Route>
         <Route
           path="employee/reviews"
           element={

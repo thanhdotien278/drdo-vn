@@ -109,30 +109,24 @@ export function AddressesPage() {
   }
 
   if (addresses.status === 'loading') {
-    return (
-      <div className="page">
-        <StateBlock title="Đang tải địa chỉ…" />
-      </div>
-    );
+    return <StateBlock title="Đang tải địa chỉ…" />;
   }
 
   if (addresses.status === 'error') {
     return (
-      <div className="page">
-        <StateBlock
-          title="Không tải được sổ địa chỉ"
-          description={addresses.error?.message}
-          actionLabel="Thử lại"
-          onAction={addresses.reload}
-        />
-      </div>
+      <StateBlock
+        title="Không tải được sổ địa chỉ"
+        description={addresses.error?.message}
+        actionLabel="Thử lại"
+        onAction={addresses.reload}
+      />
     );
   }
 
   const list = addresses.data ?? [];
 
   return (
-    <div className="page addresses-page">
+    <div className="addresses-page">
       <h1>Sổ địa chỉ</h1>
 
       {error ? (

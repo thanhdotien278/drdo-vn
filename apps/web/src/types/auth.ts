@@ -8,6 +8,7 @@ export interface AuthUser {
   phone: string;
   roles: UserRole[];
   status: 'active' | 'blocked' | 'inactive';
+  avatarUrl?: string;
 }
 
 export interface AuthResult {

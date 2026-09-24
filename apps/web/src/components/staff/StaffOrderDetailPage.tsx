@@ -71,7 +71,7 @@ export function StaffOrderDetailPage({ listPath, api }: StaffOrderDetailPageProp
 
   if (order.status === 'loading') {
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock title="Đang tải đơn hàng…" />
       </div>
     );
@@ -80,7 +80,7 @@ export function StaffOrderDetailPage({ listPath, api }: StaffOrderDetailPageProp
   if (order.status === 'error' || !order.data) {
     const notFound = order.error instanceof ApiRequestError && order.error.status === 404;
     return (
-      <div className="page">
+      <div className="page-container page">
         <StateBlock
           title={notFound ? 'Không tìm thấy đơn hàng' : 'Không tải được đơn hàng'}
           description={notFound ? undefined : order.error?.message}
@@ -97,7 +97,7 @@ export function StaffOrderDetailPage({ listPath, api }: StaffOrderDetailPageProp
   const nextPayment = data.paymentStatus === 'unpaid' ? 'paid' : 'unpaid';
 
   return (
-    <div className="page order-detail">
+    <div className="page-container page order-detail">
       <nav className="breadcrumb" aria-label="Đường dẫn">
         <Link to={listPath}>Đơn hàng</Link>
         <span aria-hidden="true">/</span>

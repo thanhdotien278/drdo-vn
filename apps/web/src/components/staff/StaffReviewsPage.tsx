@@ -55,7 +55,7 @@ export function StaffReviewsPage({ title, api }: { title: string; api: ReviewsAp
   }
 
   return (
-    <div className="page admin-page">
+    <div className="page-container page admin-page">
       <div className="admin-page__header">
         <h1>{title}</h1>
       </div>

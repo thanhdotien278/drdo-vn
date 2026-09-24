@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { PageContainer } from '../components/PageContainer';
 
 interface PlaceholderPageProps {
   title: string;
@@ -11,14 +12,16 @@ interface PlaceholderPageProps {
  */
 export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
-    <div className="state-block">
-      <p className="state-block__title">{title}</p>
-      <p className="state-block__description">
-        {description ?? 'Tính năng đang được xây dựng và sẽ sớm ra mắt.'}
-      </p>
-      <Link className="button button--primary" to="/products">
-        Tiếp tục mua sắm
-      </Link>
-    </div>
+    <PageContainer className="page">
+      <div className="state-block">
+        <p className="state-block__title">{title}</p>
+        <p className="state-block__description">
+          {description ?? 'Tính năng đang được xây dựng và sẽ sớm ra mắt.'}
+        </p>
+        <Link className="button button--primary" to="/products">
+          Tiếp tục mua sắm
+        </Link>
+      </div>
+    </PageContainer>
   );
 }

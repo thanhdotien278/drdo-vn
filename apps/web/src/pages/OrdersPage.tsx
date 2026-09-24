@@ -17,30 +17,24 @@ export function OrdersPage() {
   );
 
   if (orders.status === 'loading') {
-    return (
-      <div className="page">
-        <StateBlock title="Đang tải đơn hàng…" />
-      </div>
-    );
+    return <StateBlock title="Đang tải đơn hàng…" />;
   }
 
   if (orders.status === 'error') {
     return (
-      <div className="page">
-        <StateBlock
-          title="Không tải được đơn hàng"
-          description={orders.error?.message}
-          actionLabel="Thử lại"
-          onAction={orders.reload}
-        />
-      </div>
+      <StateBlock
+        title="Không tải được đơn hàng"
+        description={orders.error?.message}
+        actionLabel="Thử lại"
+        onAction={orders.reload}
+      />
     );
   }
 
   const items = orders.data?.items ?? [];
 
   return (
-    <div className="page orders-page">
+    <div className="orders-page">
       <h1>Đơn hàng của tôi</h1>
 
       {items.length === 0 ? (
