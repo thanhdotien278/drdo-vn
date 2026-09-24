@@ -26,6 +26,7 @@ import {
   type OrderDetailDto,
   type OrderListItemDto,
 } from './order.dto.js';
+import { nextOrderNo } from './orderNo.js';
 import { countItemsByOrder } from './orderItemCounts.js';
 import { computeOrderTotals, type OrderTotals } from './orderTotals.js';
 import {
@@ -45,8 +46,6 @@ import { resolveCoupon, type ResolvedCoupon } from '../promotions/promotion.serv
  * tier free-shipping (Epic 8) can zero it out via `shippingFeeForTier`.
  */
 export { SHIPPING_FEE_VND } from './orderTotals.js';
-
-const MAX_ORDER_NO_ATTEMPTS = 5;
 
 const shippingFieldsSchema = z.object({
   fullName: z.string().trim().min(2, 'Vui lòng nhập họ tên người nhận').max(120),
@@ -94,12 +93,6 @@ interface OrderLine {
   unitPrice: number;
   qty: number;
   lineTotal: number;
-}
-
-function generateOrderNo(): string {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `DRD-${stamp}-${rand}`;
 }
 
 async function resolveShipping(
@@ -286,35 +279,27 @@ export async function checkout(user: UserDto, input: unknown): Promise<OrderDeta
 
   let order: OrderDocument | null = null;
   try {
-    for (let attempt = 0; attempt < MAX_ORDER_NO_ATTEMPTS; attempt += 1) {
-      try {
-        order = await OrderModel.create({
-          orderNo: generateOrderNo(),
-          userId: user.id,
-          paymentMethod: data.paymentMethod,
-          paymentStatus: 'unpaid',
-          orderStatus: 'pending',
-          paidAt: null,
-          totals,
-          inventoryState: 'reserved',
-          membershipTierCode: loyaltyAccount.tierCode,
-          shippingFullName: shipping.fullName,
-          shippingPhone: shipping.phone,
-          shippingLine1: shipping.line1,
-          shippingLine2: shipping.line2,
-          shippingWard: shipping.ward,
-          shippingDistrict: shipping.district,
-          shippingProvince: shipping.province,
-          contactEmail: shipping.contactEmail,
-          notesCustomer: data.notesCustomer,
-          createdBy: user.id,
-        });
-        break;
-      } catch (error) {
-        const duplicate = (error as { code?: number }).code === 11000;
-        if (!duplicate || attempt === MAX_ORDER_NO_ATTEMPTS - 1) throw error;
-      }
-    }
+    order = await OrderModel.create({
+      orderNo: await nextOrderNo(),
+      userId: user.id,
+      paymentMethod: data.paymentMethod,
+      paymentStatus: 'unpaid',
+      orderStatus: 'pending',
+      paidAt: null,
+      totals,
+      inventoryState: 'reserved',
+      membershipTierCode: loyaltyAccount.tierCode,
+      shippingFullName: shipping.fullName,
+      shippingPhone: shipping.phone,
+      shippingLine1: shipping.line1,
+      shippingLine2: shipping.line2,
+      shippingWard: shipping.ward,
+      shippingDistrict: shipping.district,
+      shippingProvince: shipping.province,
+      contactEmail: shipping.contactEmail,
+      notesCustomer: data.notesCustomer,
+      createdBy: user.id,
+    });
 
     await OrderItemModel.insertMany(lines.map((line) => ({ orderId: order!._id, ...line })));
     await OrderStatusEventModel.create({

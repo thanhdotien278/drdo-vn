@@ -20,7 +20,7 @@ export type InventoryState = (typeof INVENTORY_STATES)[number];
 
 const orderSchema = new Schema(
   {
-    orderNo: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    orderNo: { type: String, required: true, unique: true, uppercase: true, trim: true, immutable: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     paymentMethod: { type: String, enum: PAYMENT_METHODS, required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, required: true, default: 'unpaid' },

@@ -358,6 +358,11 @@ test('checkout creates a pending/unpaid order, reserves stock, clears cart', asy
     timeline: Array<{ fromStatus: string | null; toStatus: string }>;
   };
 
+  assert.match(order.orderNo, /^DRD-\d{8}-\d{4}$/);
+  const vnToday = new Date()
+    .toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+    .replace(/-/g, '');
+  assert.equal(order.orderNo.slice(4, 12), vnToday, 'date part is the Vietnam calendar day');
   assert.equal(order.orderStatus, 'pending');
   assert.equal(order.paymentStatus, 'unpaid');
   assert.equal(order.paidAt, null);
